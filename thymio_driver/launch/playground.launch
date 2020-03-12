@@ -1,0 +1,17 @@
+<launch>
+
+  <let name="ip" value="localhost"/>
+  <let name="port" value="33333"/>
+  <let name="device" value="tcp:host=$(var ip);port=$(var port)"/>
+  <let name="asebaplayground" value="/Users/Jerome/Dev/Others/aseba/bin/asebaplayground"/>
+  <let name="world" value="/Users/Jerome/Dev/Others/aseba/aseba/targets/playground/examples/thymio2.playground"/>
+
+  <executable cmd="$(var asebaplayground) $(var world)" name="asebaplayground" output="screen" shell="true">
+  </executable>
+
+  <include file="$(find-pkg-share thymio_driver)/launch/thymio.launch">
+    <arg name="device" value="$(var device)"/>
+    <arg name="port" value="44444"/>
+  </include>
+
+</launch>

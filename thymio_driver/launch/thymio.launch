@@ -1,0 +1,16 @@
+<launch>
+
+  <arg name="name" default=""/>
+  <arg name="device" default="ser:device=/dev/ttyACM0"/>
+
+  <push-ros-namespace namespace="$(var name)"/>
+
+  <include file="$(find-pkg-share thymio_driver)/launch/base.launch">
+    <arg name="device" value="$(var device)"/>
+  </include>
+
+  <include file="$(find-pkg-share thymio_description)/launch/model.launch.py">
+    <arg name="name" value="$(var name)"/>
+  </include>
+
+</launch>

@@ -1,0 +1,15 @@
+<launch>
+
+  <arg name="device"/>
+  <arg name="port" default="44444"/>
+  <arg name="motor_speed_deadband" default="10"/>
+  <arg name="axis_length" default="0.0935"/>
+  <arg name="odom_max_rate" default="-1"/>
+
+  <node pkg="asebaros" exec="asebaros" name="asebaros" args="$(var device) -p $(var port)" output="screen" required="true"/>
+  <node name="thymio" pkg="thymio_driver" exec="thymio_driver" output="screen" required="true">
+    <param name="motor_speed_deadband" value="$(var motor_speed_deadband)"/>
+    <param name="axis_length" value="$(var axis_length)"/>
+    <param name="odom_max_rate" value="$(var odom_max_rate)"/>
+  </node>
+</launch>
