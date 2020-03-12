@@ -115,7 +115,7 @@ class ThymioDriver(rclpy.node.Node):
 
         # script_path = pkg_resources.resource_filename('thymio_driver', 'aseba/thymio_ros.aesl')
 
-        script_path = os.path.join(get_package_share_directory('thymio_driver'), 'thymio_ros.aesl')
+        script_path = os.path.join(get_package_share_directory('thymio_driver'), 'aseba', 'thymio_ros.aesl')
         self.declare_parameter('script', script_path)
         script_path = self.get_parameter('script').value
         self.get_logger().info(f"Load aseba script {script_path}")
