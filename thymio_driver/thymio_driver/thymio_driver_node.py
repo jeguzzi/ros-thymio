@@ -188,7 +188,7 @@ class ThymioDriver(rclpy.node.Node):
         right_wheel_joint = self.get_parameter('right_wheel_joint').value
 
         self.wheel_state_msg = JointState()
-        self.wheel_state_msg.name = [left_wheel_joint, right_wheel_joint]
+        self.wheel_state_msg.name = [self.frame_name(left_wheel_joint), self.frame_name(right_wheel_joint)]
 
         self.wheel_state_pub = self.create_publisher(JointState, 'joint_states', 1)
         self.odom_pub = self.create_publisher(Odometry, 'odom', 1)
