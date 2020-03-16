@@ -297,7 +297,7 @@ class ThymioDriver(rclpy.node.Node):
             self.create_subscription(ColorRGBA, _ros(f'led/body/{name}'),
                                      self.on_body_led(_aseba(f'set_led_{name}')), 1)
 
-        self.create_subscription(Led, _ros('led'), self.on_led, 1)
+        self.create_subscription(Led, _ros('led'), self.on_led, 6)
         self.aseba_led_publisher = self.create_publisher(AsebaEvent, _aseba('set_led'), 6)
 
         self.create_subscription(Empty, _ros('led/off'), self.on_led_off, 1)
