@@ -8,8 +8,35 @@
   <let name="driver" value="thymio_driver" if="$(var single)"/>
   <let name="driver" value="multi_thymio_driver" unless="$(var single)"/>
 
+  <arg name="device" default=""/>
+  <arg name="port" default="44444"/>
+  <arg name="emit_motor" default="1"/>
+  <arg name="emit_buttons" default="0"/>
+  <arg name="emit_acc" default="1"/>
+  <arg name="emit_ground_raw" default="0"/>
+  <arg name="emit_proximity" default="1"/>
+  <arg name="enable_prox_comm" default="1"/>
+  <arg name="motor_deadband" default="10"/>
+  <arg name="motor_period" default="5"/>
+  <arg name="acc_period" default="2"/>
+  <arg name="buttons_period" default="5"/>
+
+
   <include file="$(find-pkg-share thymio_driver)/launch/asebaros.launch">
     <arg name="single" value="$(var single)"/>
+    <arg name="device" default="$(var device)"/>
+    <arg name="port" default="$(var port)"/>
+    <arg name="emit_motor" default="$(var emit_motor)"/>
+    <arg name="emit_buttons" default="$(var emit_buttons)"/>
+    <arg name="emit_acc" default="$(var emit_acc)"/>
+    <arg name="emit_ground_raw" default="$(var emit_ground_raw)"/>
+    <arg name="emit_buttons" default="$(var emit_buttons)"/>
+    <arg name="emit_proximity" default="$(var emit_proximity)"/>
+    <arg name="enable_prox_comm" default="$(var enable_prox_comm)"/>
+    <arg name="motor_deadband" default="$(var motor_deadband)"/>
+    <arg name="motor_period" default="$(var motor_period)"/>
+    <arg name="acc_period" default="$(var acc_period)"/>
+    <arg name="buttons_period" default="$(var buttons_period)"/>
   </include>
 
   <node name="driver" pkg="thymio_driver" exec="$(var driver)" output="screen" required="true" args="--ros-args --log-level info">
