@@ -1,0 +1,44 @@
+<launch>
+
+  <!-- <arg name="device" default="ser:device=/dev/cu.e-puck_1459-COM1-1"/> -->
+  <!-- tcp:Jeromes-MacBook-Pro.local.;port=3331 -->
+  <arg name="device" default="tcp:Jeromes-MacBook-Pro.local.;port=3333"/>
+  <!-- <arg name="device" default="tcp:Jeromes-MacBook-Pro.local.;port=3330"/> -->
+
+  <arg name="port" default="44444"/>
+
+  <arg name="name" default=""/>
+
+  <push-ros-namespace namespace="$(var name)"/>
+
+  <node pkg="asebaros" exec="asebaros" args="$(var device) -p $(var port) --ros-args --log-level info" output="screen" required="True">
+    <param name="nodes">
+      <!-- <param name="1" value="epuck"/> -->
+      <!-- <param name="1" value="epuck_1459"/> -->
+      <!-- <param name="2" value="epuck_1346"/> -->
+      <param name="prefix" value="epuck"/>
+      <param name="ANY" value="+"/>
+    </param>
+    <!-- <param name="script"> -->
+      <!-- <param name="path" value="$(find-pkg-share thymio_driver)/aseba/multi_sim_epuck_ros.aesl"/> -->
+      <!-- <param name="constants">
+        <param name="EMIT_GROUND_RAW" value="0"/>
+        <param name="EMIT_BUTTONS" value="0"/>
+        <param name="EMIT_ACC" value="0"/>
+        <param name="EMIT_MOTOR" value="0"/>
+        <param name="EMIT_PROXIMITY" value="1"/>
+        <param name="MOTOR_PERIOD" value="1"/>
+        <param name="ENABLE_PROX_COMM" value="0"/>
+      </param> -->
+    <!-- </param> -->
+  </node>
+    <node name="e-puck" pkg="thymio_driver" exec="epuck_driver" output="screen" args=" --ros-args --log-level info" required="true">
+      <param name="script" value="$(find-pkg-share thymio_driver)/aseba/sim_epuck_ros.aesl"/>
+    </node>
+
+  <include file="$(find-pkg-share epuck_description)/launch/model.launch.py">
+    <arg name="name" value="$(var name)"/>
+  </include>
+
+
+</launch>

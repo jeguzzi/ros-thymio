@@ -1,0 +1,15 @@
+<launch>
+
+  <arg name="speed" default="0.1"/>
+  <arg name="side" default="0.3"/>
+
+
+  <include file="$(find-pkg-share thymio_driver)/launch/playground_epuck.launch">
+    <arg name="world" value="/Users/Jerome/Dev/Others/aseba/aseba/targets/playground/examples/epuck_grid.playground"/>
+  </include>
+  <node pkg="thymio_driver" exec="follow_square" output="screen">
+    <param name="speed" value="$(var speed)"/>
+    <param name="side" value="$(var side)"/>
+    <param name="axis_length" value="0.051"/>
+  </node>
+</launch>

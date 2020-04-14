@@ -44,12 +44,15 @@
 <constant value="0" name="EMIT_PROXIMITY"/>
 <constant value="1" name="EMIT_MOTOR"/>
 <constant value="1" name="ENABLE_PROX_COMM"/>
+<constant value="10" name="MOTOR_DEADBAND"/>
 
 
+<!--show keywords state-->
+<keywords flag="true"/>
 
 
 <!--node thymio-II-->
-<node nodeId="61374" name="thymio-II">var t=0
+<node nodeId="1" name="thymio-II">var t=0
 var a=0
 var b[16]
 var angle[16]
@@ -60,6 +63,7 @@ var m[16]
 var n[16]
 var i
 var mask[16]=[1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0]
+var motor_counter = 0
 
 var gesture
 var wave=0
@@ -69,9 +73,12 @@ var period=1000 #ms
 var length=8
 
 var temp[2]
-var _t[2]
 var buttons[5]
 var id
+var comm[15]
+
+var steps[2] = [0, 0]
+var steps_h[2] = [0, 0]
 
 var buttons_counter = 0
 var button_backward_queue[BUTTONS_PERIOD]
@@ -85,12 +92,7 @@ var acc_x_queue[ACC_PERIOD]
 var acc_y_queue[ACC_PERIOD]
 var acc_z_queue[ACC_PERIOD]
 
-var motor_counter = 0
-var speed_left_queue[MOTOR_PERIOD]
-var speed_right_queue[MOTOR_PERIOD]
-
-var comm[15]
-var me[9]
+var deadband = MOTOR_DEADBAND
 
 mic.threshold=20
 
@@ -99,30 +101,44 @@ call prox.comm.enable(ENABLE_PROX_COMM)
 call math.fill(m,-32768)
 call math.fill(n,32)
 for i in 0:15 do
-    p[i]=i
+	p[i]=i
 end
-
 
 onevent set_speed
-if event.args[0] != _id then
- return
-end
-motor.left.target = event.args[1]
-motor.right.target = event.args[2]
+motor.left.target = event.args[0]
+motor.right.target = event.args[1]
 
 onevent motor
 if EMIT_MOTOR == 0 then
   return
 end
-speed_left_queue[motor_counter] = motor.left.speed
-speed_right_queue[motor_counter] = motor.right.speed
+temp = [motor.left.speed, motor.right.speed]
+for i in 0:1 do
+if abs temp[i] &lt;= deadband then
+	temp[i] = 0
+end
+if temp[i] > 0 and steps[i] + temp[i] &lt;= steps[i] then
+	steps_h[i] += 1
+end
+if temp[i] &lt;= 0 and steps[i] + temp[i] > steps[i] then
+	steps_h[i] -= 1
+end
+	steps[i] += temp[i]
+end
 motor_counter++
 if motor_counter == MOTOR_PERIOD then
-  call math.stat(speed_left_queue, _t[0], _t[1] , temp[0])
-  call math.stat(speed_right_queue, _t[0], _t[1], temp[1])
+	for i in 0:1 do
+		call math.muldiv(temp[i], 4*steps_h[i], 0x4000, 100)
+		temp[i] += steps[i] / 100
+	end
   motor_counter = 0
   emit odometry temp
 end
+
+#onevent motor
+#temp[0] = motor.left.speed
+#temp[1] = motor.right.speed
+#emit odometry temp
 
 #BUTTONS
 
@@ -202,10 +218,7 @@ onevent mic
 emit sound mic.intensity
 
 onevent set_sound_threshold
-if event.args[0] != _id then
- return
-end
-mic.threshold=event.args[1]
+mic.threshold=event.args[0]
 
 onevent rc5
 temp[0]=rc5.address
@@ -214,17 +227,10 @@ emit remote temp
 
 
 onevent set_comm_payload
-if event.args[0] != _id then
- return
-end
-prox.comm.tx=event.args[1]
-
+prox.comm.tx=event.args[0]
 
 onevent enable_comm
-if event.args[0] != _id then
- return
-end
-call prox.comm.enable(event.args[1])
+call prox.comm.enable(event.args[0])
 
 onevent prox.comm
 comm[0] = prox.comm.rx
@@ -235,59 +241,48 @@ call math.fill(prox.comm.rx._intensities, 0)
 emit comm comm
 
 
+# onevent set_comm
+# call prox.comm.enable(event.args[0])
+# prox.comm.tx=event.args[1]
+#
+# onevent prox.comm
+# emit comm prox.comm.rx
+
+
 onevent play_system_sound
-if event.args[0] != _id then
- return
-end
-call sound.system(event.args[1])
+call sound.system(event.args[0])
 
 onevent play_sound
-if event.args[0] != _id then
- return
-end
-call sound.freq(event.args[1],event.args[2])
+call sound.freq(event.args[0],event.args[1])
 
 
 
 onevent set_led_top
-if event.args[0] != _id then
- return
-end
-call leds.top(event.args[1],event.args[2],event.args[3])
+call leds.top(event.args[0],event.args[1],event.args[2])
 
 onevent set_led_bottom_right
-if event.args[0] != _id then
- return
-end
-call leds.bottom.right(event.args[1],event.args[2],event.args[3])
+call leds.bottom.right(event.args[0],event.args[1],event.args[2])
 
 onevent set_led_bottom_left
-if event.args[0] != _id then
- return
-end
-call leds.bottom.left(event.args[1],event.args[2],event.args[3])
+call leds.bottom.left(event.args[0],event.args[1],event.args[2])
 
 onevent set_led
-if event.args[0] != _id then
- return
-end
-id=event.args[1]
+id=event.args[0]
 if id==0 then
-call leds.circle(event.args[2], event.args[3], event.args[4], event.args[5], event.args[6], event.args[7], event.args[8], event.args[9])
+call leds.circle(event.args[1], event.args[2], event.args[3], event.args[4], event.args[5], event.args[6], event.args[7],event.args[8])
 elseif id==1 then
-call leds.prox.h(event.args[2], event.args[3], event.args[4], event.args[5], event.args[6], event.args[7], event.args[8], event.args[9])
+call leds.prox.h(event.args[1], event.args[2], event.args[3], event.args[4], event.args[5], event.args[6], event.args[7],event.args[7])
 elseif id==2 then
-call leds.buttons(event.args[2], event.args[3], event.args[4], event.args[5])
+call leds.buttons(event.args[1], event.args[2], event.args[3], event.args[4])
 elseif id==3 then
-call leds.prox.v(event.args[2], event.args[4])
+call leds.prox.v( event.args[1], event.args[2])
 elseif id==4 then
-call leds.temperature(event.args[2], event.args[3])
+call leds.temperature(event.args[1],event.args[2])
 elseif id==5 then
-call leds.sound(event.args[2])
+call leds.sound(event.args[1])
 elseif id==6 then
-call leds.rc(event.args[2])
+call leds.rc(event.args[1])
 end
-
 
 #gestures
 
@@ -301,13 +296,13 @@ call math.addscalar(angle,b,a)
 
 sub rect_wave
 for i in 0:7 do
-    if 2*angle[i]&lt;0 then
-        led[i]=0
-    elseif 2*angle[i]&lt;16384 then
-        led[i]=3
-    else
-        led[i]=32
-    end
+	if 2*angle[i]&lt;0 then
+		led[i]=0
+	elseif 2*angle[i]&lt;16384 then
+		led[i]=3
+	else
+		led[i]=32
+	end
 end
 
 sub harmonic_wave
@@ -319,13 +314,15 @@ call math.muldiv(led,led,n,m)
 
 sub mirror
 for i in 0:8 do
-    if i&lt;mirror then
-        led[i]=(led[i]+led[mirror-i])/2
-    end
+	if i&lt;mirror then
+		led[i]=(led[i]+led[mirror-i])/2
+	end
 end
 
 sub mask
 call math.mul(led,led,mask)
+
+
 
 sub setleds
 if leds==0 then
@@ -344,51 +341,50 @@ callsub setleds
 onevent timer0
 callsub update_phase
 if wave==0 then
-    callsub rect_wave
+	callsub rect_wave
 elseif  wave==1 then
-    callsub harmonic_wave
+	callsub harmonic_wave
 end
 if  mirror>0 then
-    callsub mirror
+	callsub mirror
 end
 callsub mask
 callsub setleds
 
 
 onevent set_led_gesture
-if event.args[0] != _id then
- return
-end
-gesture=event.args[1]
+gesture=event.args[0]
 if gesture==0 then
-    timer.period[0]=0
-    callsub reset_leds
-    return
+	timer.period[0]=0
+	callsub reset_leds
+	return
 else
 
-    callsub reset_leds
-    leds=event.args[2]
-    wave=event.args[3]
-    period=event.args[4]
-    if abs(period)&lt;20 then
-        call math.max(period,abs(period),20)
-    end
-    length=event.args[5]
-    call math.max(length,length,1)
-    call math.fill(l,length)
-    call math.muldiv(b,p,m,l)
-    mirror=event.args[6]
-    call math.max(mirror,mirror,0)
-    call math.min(mirror,mirror,15)
-    for i in 0:7 do
-        mask[i]=event.args[i+7]
-    end
+	callsub reset_leds
+	leds=event.args[1]
+	wave=event.args[2]
+	period=event.args[3]
+	if abs(period)&lt;20 then
+		call math.max(period,abs(period),20)
+	end
+	length=event.args[4]
+	call math.max(length,length,1)
+	call math.fill(l,length)
+	call math.muldiv(b,p,m,l)
+	mirror=event.args[5]
+	call math.max(mirror,mirror,0)
+	call math.min(mirror,mirror,15)
+	for i in 0:7 do
+		mask[i]=event.args[i+6]
+	end
 
-    timer.period[0]=20
+	timer.period[0]=20
 end
 
-#onevent shutdown
-#call _poweroff()</node>
+# onevent shutdown
+# call _poweroff()
+
+</node>
 
 
 </network>

@@ -1,0 +1,48 @@
+<launch>
+
+  <arg name="device" default=""/>
+  <arg name="port" default="44444"/>
+  <arg name="emit_motor" default="1"/>
+  <arg name="emit_buttons" default="1"/>
+  <arg name="emit_acc" default="1"/>
+  <arg name="emit_ground_raw" default="0"/>
+  <arg name="emit_buttons" default="0"/>
+  <arg name="emit_proximity" default="1"/>
+  <arg name="enable_prox_comm" default="1"/>
+  <arg name="motor_deadband" default="10"/>
+  <arg name="motor_period" default="5"/>
+  <arg name="acc_period" default="2"/>
+  <arg name="buttons_period" default="5"/>
+  <arg name="single" default="true"/>
+  <let name="script" value="thymio_ros.aesl" if="$(var single)"/>
+  <let name="script" value="multi_thymio_ros.aesl" unless="$(var single)"/>
+
+  <node pkg="asebaros" exec="asebaros" name="asebaros" args="$(var device) -p $(var port)" output="screen" required="true">
+    <param name="single" value="$(var single)"/>
+    <param name="nodes">
+      <param name="thymio-II">
+        <param name="prefix" value="thymio_"/>
+        <param name="accept_all" value="true"/>
+      </param>
+      <param name="*">
+        <param name="accept_all" value="false"/>
+      </param>
+    </param>
+    <param name="script">
+      <param name="path" value="$(find-pkg-share thymio_driver)/aseba/$(var script)"/>
+      <param name="constants">
+        <param name="MOTOR_PERIOD" value="$(var motor_period)"/>
+        <param name="MOTOR_DEADBAND" value="$(var motor_deadband)"/>
+        <param name="ACC_PERIOD" value="$(var acc_period)"/>
+        <param name="BUTTONS_PERIOD" value="$(var buttons_period)"/>
+        <param name="EMIT_GROUND_RAW" value="$(var emit_ground_raw)"/>
+        <param name="EMIT_BUTTONS" value="$(var emit_buttons)"/>
+        <param name="EMIT_ACC" value="$(var emit_acc)"/>
+        <param name="EMIT_PROXIMITY" value="$(var emit_proximity)"/>
+        <param name="EMIT_MOTOR" value="$(var emit_motor)"/>
+        <param name="ENABLE_PROX_COMM" value="$(var enable_prox_comm)"/>
+      </param>
+    </param>
+  </node>
+
+</launch>

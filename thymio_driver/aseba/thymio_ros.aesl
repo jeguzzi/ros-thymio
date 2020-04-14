@@ -1,6 +1,7 @@
 <!DOCTYPE aesl-source>
 <network>
 
+
 <!--list of global events-->
 <event size="0" name="shutdown"/>
 <event size="2" name="set_speed"/>
@@ -32,9 +33,23 @@
 <event size="1" name="play_system_sound"/>
 <event size="2" name="play_sound"/>
 
+
 <!--list of constants-->
+<constant value="2" name="ACC_PERIOD"/>
+<constant value="10" name="MOTOR_PERIOD"/>
+<constant value="5" name="BUTTONS_PERIOD"/>
+<constant value="0" name="EMIT_GROUND_RAW"/>
+<constant value="0" name="EMIT_BUTTONS"/>
+<constant value="1" name="EMIT_ACC"/>
+<constant value="0" name="EMIT_PROXIMITY"/>
+<constant value="1" name="EMIT_MOTOR"/>
+<constant value="1" name="ENABLE_PROX_COMM"/>
+<constant value="10" name="MOTOR_DEADBAND"/>
+
+
 <!--show keywords state-->
-<!--><keywords flag="true"/><-->
+<keywords flag="true"/>
+
 
 <!--node thymio-II-->
 <node nodeId="1" name="thymio-II">#gestures
@@ -49,7 +64,7 @@ var m[16]
 var n[16]
 var i
 var mask[16]=[1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0]
-
+var motor_counter = 0
 
 var gesture
 var wave=0
@@ -62,9 +77,27 @@ var temp[2]
 var buttons[5]
 var id
 var comm[15]
+
+var steps[2] = [0, 0]
+var steps_h[2] = [0, 0]
+
+var buttons_counter = 0
+var button_backward_queue[BUTTONS_PERIOD]
+var button_left_queue[BUTTONS_PERIOD]
+var button_center_queue[BUTTONS_PERIOD]
+var button_forward_queue[BUTTONS_PERIOD]
+var button_right_queue[BUTTONS_PERIOD]
+
+var acc_counter = 0
+var acc_x_queue[ACC_PERIOD]
+var acc_y_queue[ACC_PERIOD]
+var acc_z_queue[ACC_PERIOD]
+
+var deadband = MOTOR_DEADBAND
+
 mic.threshold=20
 
-call prox.comm.enable(1)
+call prox.comm.enable(ENABLE_PROX_COMM)
 
 call math.fill(m,-32768)
 call math.fill(n,32)
@@ -72,25 +105,63 @@ for i in 0:15 do
 	p[i]=i
 end
 
-
 onevent set_speed
 motor.left.target = event.args[0]
 motor.right.target = event.args[1]
 
 onevent motor
-temp[0] = motor.left.speed
-temp[1] = motor.right.speed
-emit odometry temp
+if EMIT_MOTOR == 0 then
+  return
+end
+temp = [motor.left.speed, motor.right.speed]
+for i in 0:1 do
+if abs temp[i] &lt;= deadband then
+	temp[i] = 0
+end
+if temp[i] > 0 and steps[i] + temp[i] &lt; steps[i] then
+	steps_h[i] += 1
+end
+if temp[i] &lt; 0 and steps[i] + temp[i] > steps[i] then
+	steps_h[i] -= 1
+end
+	steps[i] += temp[i]
+end
+motor_counter++
+if motor_counter == MOTOR_PERIOD then
+	for i in 0:1 do
+		call math.muldiv(temp[i], 4*steps_h[i], 0x4000, 100)
+		temp[i] += steps[i] / 100
+	end
+  motor_counter = 0
+  emit odometry temp
+end
+
+#onevent motor
+#temp[0] = motor.left.speed
+#temp[1] = motor.right.speed
+#emit odometry temp
 
 #BUTTONS
 
 onevent buttons
-buttons[0]=button.backward
-buttons[1]=button.left
-buttons[2]=button.center
-buttons[3]=button.forward
-buttons[4]=button.right
-emit buttons buttons
+if EMIT_BUTTONS == 0 then
+    return
+end
+button_backward_queue[buttons_counter] = button.backward
+button_left_queue[buttons_counter] = button.left
+button_center_queue[buttons_counter] = button.center
+button_forward_queue[buttons_counter] = button.forward
+button_right_queue[buttons_counter] = button.right
+buttons_counter++
+if buttons_counter == BUTTONS_PERIOD then
+  call math.stat(button_backward_queue, temp[0], buttons[0], temp[1])
+  call math.stat(button_left_queue, temp[0], buttons[1], temp[1])
+  call math.stat(button_center_queue, temp[0], buttons[2], temp[1])
+  call math.stat(button_forward_queue, temp[0], buttons[3], temp[1])
+  call math.stat(button_right_queue, temp[0], buttons[4], temp[1])
+  buttons_counter = 0
+  emit buttons buttons
+end
 
 onevent button.backward
 emit button_backward button.backward
@@ -110,15 +181,33 @@ emit button_right button.right
 #PROXIMITY
 
 onevent prox
+if EMIT_PROXIMITY == 0 then
+    return
+end
 emit proximity prox.horizontal
 emit ground prox.ground.delta
-emit ground_reflected prox.ground.reflected
-emit ground_ambient prox.ground.ambiant
+if EMIT_GROUND_RAW == 1 then
+  emit ground_reflected prox.ground.reflected
+  emit ground_ambient prox.ground.ambiant
+end
 
 # IMU
 
 onevent acc
-emit accelerometer acc
+if EMIT_ACC == 0 then
+    return
+end
+acc_x_queue[acc_counter] = acc[0]
+acc_y_queue[acc_counter] = acc[1]
+acc_z_queue[acc_counter] = acc[2]
+acc_counter++
+if acc_counter == ACC_PERIOD then
+  call math.stat(acc_x_queue, temp[0], temp[1], acc[0])
+  call math.stat(acc_y_queue, temp[0], temp[1], acc[1])
+  call math.stat(acc_z_queue, temp[0], temp[1], acc[2])
+  acc_counter = 0
+  emit accelerometer acc
+end
 
 onevent tap
 emit tap

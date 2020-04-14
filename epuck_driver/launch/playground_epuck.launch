@@ -1,0 +1,19 @@
+<launch>
+
+  <let name="ip" value="localhost"/>
+  <let name="port" value="33333"/>
+  <let name="device" value="tcp:host=$(var ip);port=$(var port)"/>
+  <let name="asebaplayground" value="/Users/Jerome/Dev/Others/aseba/bin/asebaplayground"/>
+  <arg name="world" default="/Users/Jerome/Dev/Others/aseba/aseba/targets/playground/examples/e-puck.playground"/>
+
+  <executable cmd="$(var asebaplayground) $(var world)" name="asebaplayground" output="screen" shell="true">
+  </executable>
+
+  <include file="$(find-pkg-share thymio_driver)/launch/epuck.launch">
+    <arg name="device" value="$(var device)"/>
+    <arg name="port" value="4444"/>
+    <!-- <arg name="motor_calibration" value="$(find-pkg-share thymio_driver)/calibration/playground_e-puck.yaml"/> -->
+    <!-- <arg name="axis_length" value="0.094"/> -->
+  </include>
+
+</launch>

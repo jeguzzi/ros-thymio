@@ -1,0 +1,15 @@
+/**:
+   ros__parameters:
+      motor_calibration:
+         left:
+            kind: quadratic
+            parameters:
+               - 0.0003412969283
+               - 0.0
+            deadband: 0
+         right:
+            kind: quadratic
+            parameters:
+               - 0.0003412969283
+               - 0.0
+            deadband: 0

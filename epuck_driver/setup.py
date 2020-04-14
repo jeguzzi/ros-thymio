@@ -2,11 +2,11 @@ from setuptools import setup
 # from setuptools import find_packages
 from glob import glob
 
-package_name = 'thymio_driver'
+package_name = 'epuck_driver'
 
 setup(
     name=package_name,
-    version='0.1.0',
+    version='0.0.0',
     packages=[package_name],
     data_files=[
         ('share/ament_index/resource_index/packages',
@@ -31,10 +31,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'thymio_driver = thymio_driver.thymio_driver_node:main',
-            'multi_thymio_driver = thymio_driver.multi_thymio_driver_node:main',
-            'follow_square = thymio_driver.follow_square:main',
-            'calibrate_motors = thymio_driver.calibrate_motors:main',
+            'epuck_driver = epuck_driver.epuck_driver_node:main'
+            'multi_epuck_driver = epuck_driver.multi_epuck_driver_node:main'
         ],
     },
 )

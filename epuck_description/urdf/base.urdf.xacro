@@ -3,16 +3,17 @@
 
   <xacro:include filename="wheel.urdf.xacro"/>
   <xacro:include filename="proximity_sensor.urdf.xacro"/>
-  <xacro:include filename="imu.urdf.xacro"/>
+  <xacro:include filename="camera.urdf.xacro"/>
+  <!-- <xacro:include filename="imu.urdf.xacro"/> -->
 
   <xacro:arg name="name" default=""/>
   <xacro:arg name="left_wheel_mu" default="100.0"/>
   <xacro:arg name="right_wheel_mu" default="100.0"/>
-  <xacro:property name="wheel_axis" value="0.0935"/>
-  <xacro:property name="wheel_radius" value="0.022"/>
+  <xacro:property name="wheel_axis" value="0.054"/>
+  <xacro:property name="wheel_radius" value="0.02"/>
   <xacro:property name="wheel_torque" value="0.1"/>
-  <xacro:property name="body_mass" value="0.2"/>
-  <xacro:property name="wheel_mass" value="0.024"/>
+  <xacro:property name="body_mass" value="0.16"/>
+  <xacro:property name="wheel_mass" value="0.01"/>
   <xacro:arg name="proximity_max_range" default="0.12"/>
   <xacro:arg name="proximity_resolution" default="0.005"/>
   <xacro:arg name="proximity_fov" default="0.3"/>
@@ -29,31 +30,25 @@
     <xacro:property name="tf_prefix" value=""/>
   </xacro:if>
 
-  <xacro:macro name="thymio">
+  <xacro:macro name="epuck">
     <link name="${tf_prefix}base_link">
       <collision>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 ${-pi/2}"/>
         <geometry>
-          <mesh filename="package://thymio_description/meshes/base_collision.dae"/>
-        </geometry>
-      </collision>
-      <collision>
-        <origin xyz="0.06 0 0.009"/>
-        <geometry>
-          <sphere radius="0.009"/>
+          <mesh filename="package://epuck_description/meshes/base.dae"/>
         </geometry>
       </collision>
       <visual>
-        <origin xyz="0.0 0 0.0" rpy="0 0 0"/>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 ${-pi/2}"/>
         <geometry>
-          <mesh filename="package://thymio_description/meshes/base_simple.dae"/>
+          <mesh filename="package://epuck_description/meshes/base.dae"/>
         </geometry>
       </visual>
     </link>
 
     <link name="${tf_prefix}body_link">
       <inertial>
-        <origin xyz="0.0243 0 0.0315"/>
+        <origin xyz="0.00 0 0.0204"/>
         <mass value="${body_mass}"/>
         <inertia ixx="${0.002199 * body_mass}" ixy="0" ixz="${-0.000760 * body_mass}" iyy="${0.002639 * body_mass}" iyz="0" izz="${0.002526 * body_mass}"/>
       </inertial>
@@ -71,18 +66,18 @@
       <mu2>0.1</mu2>
     </gazebo>
 
-    <xacro:wheel tf_prefix="${tf_prefix}" name="left" position="${wheel_axis * 0.5}" radius="${wheel_radius}" mass="${wheel_mass}" mu="$(arg left_wheel_mu)"/>
-    <xacro:wheel tf_prefix="${tf_prefix}" name="right" position="${-wheel_axis * 0.5}" radius="${wheel_radius}" mass="${wheel_mass}" mu="$(arg right_wheel_mu)"/>
+    <xacro:wheel tf_prefix="${tf_prefix}" name="left" position="${wheel_axis * 0.5}" radius="${wheel_radius}" mass="${wheel_mass}" mu="$(arg left_wheel_mu)" width="0.002"/>
+    <xacro:wheel tf_prefix="${tf_prefix}" name="right" position="${-wheel_axis * 0.5}" radius="${wheel_radius}" mass="${wheel_mass}" mu="$(arg right_wheel_mu)" width="0.002"/>
 
-    <xacro:proximity_sensor tf_prefix="${tf_prefix}" group="proximity" range_max="$(arg proximity_max_range)" resolution="$(arg proximity_resolution)" fov="$(arg proximity_fov)" name="center" xyz="0.08 0 0.035" rpy="0 0 0"/>
-    <xacro:proximity_sensor tf_prefix="${tf_prefix}" group="proximity" range_max="$(arg proximity_max_range)" resolution="$(arg proximity_resolution)" fov="$(arg proximity_fov)" name="center_left" xyz="0.0756 0.0261 0.035" rpy="0 0 0.33161"/>
-    <xacro:proximity_sensor tf_prefix="${tf_prefix}" group="proximity" range_max="$(arg proximity_max_range)" resolution="$(arg proximity_resolution)" fov="$(arg proximity_fov)" name="center_right" xyz="0.0756 -0.0261 0.035" rpy="0 0 -0.33161"/>
-    <xacro:proximity_sensor tf_prefix="${tf_prefix}" group="proximity" range_max="$(arg proximity_max_range)" resolution="$(arg proximity_resolution)" fov="$(arg proximity_fov)" name="left" xyz="0.063 0.0493 0.035" rpy="0 0 0.66323"/>
-    <xacro:proximity_sensor tf_prefix="${tf_prefix}" group="proximity" range_max="$(arg proximity_max_range)" resolution="$(arg proximity_resolution)" fov="$(arg proximity_fov)" name="right" xyz="0.063 -0.0493 0.035" rpy="0 0 -0.66323"/>
-    <xacro:proximity_sensor tf_prefix="${tf_prefix}" group="proximity" range_max="$(arg proximity_max_range)" resolution="$(arg proximity_resolution)" fov="$(arg proximity_fov)" name="rear_left" xyz="-0.03 0.0305 0.035" rpy="0 0 3.14159"/>
-    <xacro:proximity_sensor tf_prefix="${tf_prefix}" group="proximity" range_max="$(arg proximity_max_range)" resolution="$(arg proximity_resolution)" fov="$(arg proximity_fov)" name="rear_right" xyz="-0.03 -0.0305 0.035" rpy="0 0 3.14159"/>
-    <xacro:proximity_sensor tf_prefix="${tf_prefix}" group="ground" range_max="0.03" name="left" xyz="0.07157 0.01155 0.009" rpy="0 1.5708 0.24311"/>
-    <xacro:proximity_sensor tf_prefix="${tf_prefix}" group="ground" range_max="0.03" name="right" xyz="0.07157 -0.01155 0.009" rpy="0 1.5708 -0.24311"/>
+    <xacro:proximity_sensor tf_prefix="${tf_prefix}" group="proximity" range_max="$(arg proximity_max_range)" resolution="$(arg proximity_resolution)" fov="$(arg proximity_fov)" name="ring_0" xyz="0.0335 -0.0105 0.032" rpy="0 0 -0.3141592654"/>
+    <xacro:proximity_sensor tf_prefix="${tf_prefix}" group="proximity" range_max="$(arg proximity_max_range)" resolution="$(arg proximity_resolution)" fov="$(arg proximity_fov)" name="ring_1" xyz="0.023 -0.026 0.032" rpy="0 0 -0.7853981634"/>
+    <xacro:proximity_sensor tf_prefix="${tf_prefix}" group="proximity" range_max="$(arg proximity_max_range)" resolution="$(arg proximity_resolution)" fov="$(arg proximity_fov)" name="ring_2" xyz="0 -0.033 0.032" rpy="0 0 -1.5707963268"/>
+    <xacro:proximity_sensor tf_prefix="${tf_prefix}" group="proximity" range_max="$(arg proximity_max_range)" resolution="$(arg proximity_resolution)" fov="$(arg proximity_fov)" name="ring_3" xyz="-0.03 -0.018 0.032" rpy="0 0 -2.4783675378"/>
+    <xacro:proximity_sensor tf_prefix="${tf_prefix}" group="proximity" range_max="$(arg proximity_max_range)" resolution="$(arg proximity_resolution)" fov="$(arg proximity_fov)" name="ring_4" xyz="-0.03 0.018 0.032" rpy="0 0 2.4783675378"/>
+    <xacro:proximity_sensor tf_prefix="${tf_prefix}" group="proximity" range_max="$(arg proximity_max_range)" resolution="$(arg proximity_resolution)" fov="$(arg proximity_fov)" name="ring_5" xyz="0 0.033 0.032" rpy="0 0 1.5707963268"/>
+    <xacro:proximity_sensor tf_prefix="${tf_prefix}" group="proximity" range_max="$(arg proximity_max_range)" resolution="$(arg proximity_resolution)" fov="$(arg proximity_fov)" name="ring_6" xyz="0.023 0.026 0.032" rpy="0 0 0.7853981634"/>
+    <xacro:proximity_sensor tf_prefix="${tf_prefix}" group="proximity" range_max="$(arg proximity_max_range)" resolution="$(arg proximity_resolution)" fov="$(arg proximity_fov)" name="ring_7" xyz="0.0335 0.0105 0.032" rpy="0 0 0.3141592654"/>
+
 
     <link name="${tf_prefix}laser_link"/>
     <joint name="${tf_prefix}base_laser_joint" type="fixed">
@@ -94,7 +89,6 @@
 
     <!-- We have a problem with xacro -->
     <!-- <xacro:imu ns="$(arg name)"/> -->
-
     <!-- see https://github.com/ros-simulation/gazebo_ros_pkgs/blob/kinetic-devel/gazebo_plugins/src/gazebo_ros_diff_drive.cpp -->
 
     <gazebo>
@@ -146,4 +140,7 @@
      </xacro:if>
 
   </xacro:macro>
+
+  <xacro:line_camera tf_prefix="${tf_prefix}"/>
+
 </robot>
