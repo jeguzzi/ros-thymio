@@ -17,7 +17,7 @@ setup(
         ('share/' + package_name + '/launch', glob('launch/*.launch')),
         ('share/' + package_name + '/calibration', glob('calibration/*.yaml'))
     ],
-    install_requires=['setuptools'],
+    install_requires=['setuptools, typing_extensions'],
     zip_safe=True,
     keywords=['Thymio'],
     classifiers=[
