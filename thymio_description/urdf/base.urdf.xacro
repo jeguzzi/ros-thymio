@@ -65,7 +65,7 @@
       <origin xyz="0 0 0"/>
     </joint>
 
-    <gazebo reference="base_link">
+    <gazebo reference="${tf_prefix}base_link">
       <selfCollide>false</selfCollide>
       <mu1>0.1</mu1>
       <mu2>0.1</mu2>
