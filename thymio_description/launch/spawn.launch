@@ -2,6 +2,9 @@
   <arg name="name" default="thymio"/>
   <arg name="x" default="0.0"/>
   <arg name="y" default="0.0"/>
+
+  <push-ros-namespace namespace="$(var name)"/>
+
   <node name="spawn_thymio" exec="spawn_entity.py" pkg="gazebo_ros" output="screen"
     args="-entity $(var name) -topic robot_description -x $(var x) -y $(var y) -z 0"/>
 
