@@ -3,7 +3,7 @@
   <let name="ip" value="localhost"/>
   <let name="in_port" value="33333"/>
   <let name="device" value="tcp:host=$(var ip);port=$(var in_port)"/>
-  <let name="asebaplayground" value="/Users/Jerome/Dev/Others/aseba/bin/asebaplayground"/>
+  <let name="asebaplayground" value="$(env ASEBA_DIR)/bin/asebaplayground"/>
   <arg name="world" default="$(env ASEBA_DIR)/aseba/targets/playground/examples/thymio2.playground"/>
 
   <executable cmd="$(var asebaplayground) $(var world)" name="asebaplayground" output="screen" shell="true">
