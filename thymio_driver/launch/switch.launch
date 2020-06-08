@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
 sleep 3
-/Users/Jerome/Dev/Others/aseba/bin/asebaswitch "tcp:host=localhost\;port=33333\;remapLocal=1" "tcp:host=localhost\;port=33334\;remapLocal=2" "tcp:host=localhost\;port=33335\;remapLocal=3" -p 33330
+${ASEBA_DIR}/bin/asebaswitch "tcp:host=localhost\;port=33333\;remapLocal=1" "tcp:host=localhost\;port=33334\;remapLocal=2" "tcp:host=localhost\;port=33335\;remapLocal=3" -p 33330

@@ -5,9 +5,9 @@ from typing import Any
 import rclpy
 import rclpy.node
 import rclpy.publisher
+import std_srvs.srv
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
-import std_srvs.srv
 
 
 class FollowSquare(rclpy.node.Node):  # type: ignore

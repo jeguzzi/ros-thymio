@@ -17,7 +17,7 @@
   <let name="script" value="thymio_ros.aesl" if="$(var single)"/>
   <let name="script" value="multi_thymio_ros.aesl" unless="$(var single)"/>
 
-  <node pkg="asebaros" exec="asebaros" name="asebaros" args="$(var device) -p $(var port)" output="screen" required="true">
+  <node pkg="asebaros" exec="asebaros" name="asebaros" args="$(var device) -p $(var port) --ros-args --log-level info" output="screen" required="true">
     <param name="single" value="$(var single)"/>
     <param name="nodes">
       <param name="thymio-II">
