@@ -2,11 +2,11 @@
 
   <arg name="axis_length" default="0.0935"/>
   <arg name="odom_max_rate" default="-1"/>
-  <arg name="motor_calibration" default="$(find-pkg-share thymio_driver)/calibration/motor.yaml"/>
+  <!-- <arg name="motor_calibration" default="$(find thymio_driver)/calibration/motor.yaml"/> -->
   <arg name="single" default="true"/>
   <arg name="tf_prefix" default=""/>
-  <let name="driver" value="thymio_driver" if="$(var single)"/>
-  <let name="driver" value="multi_thymio_driver" unless="$(var single)"/>
+  <arg name="driver" value="thymio_driver_node.py" if="$(arg single)"/>
+  <arg name="driver" value="multi_thymio_driver_node.py" unless="$(arg single)"/>
 
   <arg name="device" default=""/>
   <arg name="port" default="44444"/>
@@ -22,28 +22,27 @@
   <arg name="buttons_period" default="5"/>
 
 
-  <include file="$(find-pkg-share thymio_driver)/launch/asebaros.launch">
-    <arg name="single" value="$(var single)"/>
-    <arg name="device" value="$(var device)"/>
-    <arg name="port" value="$(var port)"/>
-    <arg name="emit_motor" value="$(var emit_motor)"/>
-    <arg name="emit_buttons" value="$(var emit_buttons)"/>
-    <arg name="emit_acc" value="$(var emit_acc)"/>
-    <arg name="emit_ground_raw" value="$(var emit_ground_raw)"/>
-    <arg name="emit_proximity" value="$(var emit_proximity)"/>
-    <arg name="enable_prox_comm" value="$(var enable_prox_comm)"/>
-    <arg name="motor_deadband" value="$(var motor_deadband)"/>
-    <arg name="motor_period" value="$(var motor_period)"/>
-    <arg name="acc_period" value="$(var acc_period)"/>
-    <arg name="buttons_period" value="$(var buttons_period)"/>
+  <include file="$(find thymio_driver)/launch/asebaros.launch">
+    <arg name="single" value="$(arg single)"/>
+    <arg name="device" value="$(arg device)"/>
+    <arg name="port" value="$(arg port)"/>
+    <arg name="emit_motor" value="$(arg emit_motor)"/>
+    <arg name="emit_buttons" value="$(arg emit_buttons)"/>
+    <arg name="emit_acc" value="$(arg emit_acc)"/>
+    <arg name="emit_ground_raw" value="$(arg emit_ground_raw)"/>
+    <arg name="emit_proximity" value="$(arg emit_proximity)"/>
+    <arg name="enable_prox_comm" value="$(arg enable_prox_comm)"/>
+    <arg name="motor_deadband" value="$(arg motor_deadband)"/>
+    <arg name="motor_period" value="$(arg motor_period)"/>
+    <arg name="acc_period" value="$(arg acc_period)"/>
+    <arg name="buttons_period" value="$(arg buttons_period)"/>
   </include>
-
-  <node name="driver" pkg="thymio_driver" exec="$(var driver)" output="screen" args="--ros-args --log-level info">
-    <param name="axis_length" value="$(var axis_length)"/>
-    <param name="odom_max_rate" value="$(var odom_max_rate)"/>
-    <param from="$(var motor_calibration)"/>
-    <param name="tf_prefix" value="$(var tf_prefix)"/>
-    <param name="launch_model" value="thymio_description model.launch.py"/>
+  <node name="driver" pkg="thymio_driver" type="$(arg driver)"  output="screen">
+    <param name="axis_length" value="$(arg axis_length)"/>
+    <param name="odom_max_rate" value="$(arg odom_max_rate)"/>
+    <!-- <param from="$(arg motor_calibration)"/> -->
+    <param name="tf_prefix" value="$(arg tf_prefix)"/>
+    <param name="launch_model" value="thymio_description model.launch"/>
   </node>
 
 </launch>

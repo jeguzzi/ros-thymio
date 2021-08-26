@@ -6,7 +6,6 @@
   <arg name="emit_buttons" default="1"/>
   <arg name="emit_acc" default="1"/>
   <arg name="emit_ground_raw" default="0"/>
-  <arg name="emit_buttons" default="0"/>
   <arg name="emit_proximity" default="1"/>
   <arg name="enable_prox_comm" default="1"/>
   <arg name="motor_deadband" default="10"/>
@@ -14,48 +13,47 @@
   <arg name="acc_period" default="2"/>
   <arg name="buttons_period" default="5"/>
   <arg name="single" default="true"/>
-  <let name="script" value="thymio_ros.aesl" if="$(var single)"/>
-  <let name="script" value="multi_thymio_ros.aesl" unless="$(var single)"/>
-  <let name="include_id_in_events" value="false" if="$(var single)"/>
-  <let name="include_id_in_events" value="true" unless="$(var single)"/>
-  <let name="maximal_number_of_nodes" value="1" if="$(var single)"/>
-  <let name="maximal_number_of_nodes" value="0" unless="$(var single)"/>
-  <let name="prefix" value="" if="$(var single)"/>
-  <let name="prefix" value="thymio_" unless="$(var single)"/>
+  <arg name="script" value="thymio_ros.aesl" if="$(arg single)"/>
+  <arg name="script" value="multi_thymio_ros.aesl" unless="$(arg single)"/>
+  <arg name="include_id_in_events" value="false" if="$(arg single)"/>
+  <arg name="include_id_in_events" value="true" unless="$(arg single)"/>
+  <arg name="maximal_number_of_nodes" value="1" if="$(arg single)"/>
+  <arg name="maximal_number_of_nodes" value="0" unless="$(arg single)"/>
+  <arg name="prefix" value="" if="$(arg single)"/>
+  <arg name="prefix" value="thymio_" unless="$(arg single)"/>
 
-  <node pkg="asebaros" exec="asebaros" name="asebaros" args="$-ros-args --log-level info" output="screen">
+  <node pkg="asebaros" type="asebaros" name="asebaros" output="screen">
     <param name="set_id_variable" value="false"/>
-    <param name="targets" value="$(var device)" value-sep=","/>
-    <param name="port" value="$(var port)"/>
+    <rosparam param="targets" subst_value="true">
+      [$(arg device),]
+    </rosparam>
+    <param name="port" value="$(arg port)"/>
     <param name="shutdown_on_unconnect" value="false"/>
     <param name="reload_script_on_reconnect" value="false"/>
-    <param name="include_id_in_events" value="$(var include_id_in_events)"/>
-    <param name="maximal_number_of_nodes" value="$(var maximal_number_of_nodes)"/>
-    <param name="nodes">
-      <param name="thymio">
-        <param name="type" value="thymio-II"/>
-        <param name="prefix" value="$(var prefix)"/>
-        <param name="accept" value="true"/>
-      </param>
-      <param name="other">
-        <param name="accept" value="false"/>
-      </param>
-    </param>
-    <param name="script">
-      <param name="path" value="$(find-pkg-share thymio_driver)/aseba/$(var script)"/>
-      <param name="constants">
-        <param name="MOTOR_PERIOD" value="$(var motor_period)"/>
-        <param name="MOTOR_DEADBAND" value="$(var motor_deadband)"/>
-        <param name="ACC_PERIOD" value="$(var acc_period)"/>
-        <param name="BUTTONS_PERIOD" value="$(var buttons_period)"/>
-        <param name="EMIT_GROUND_RAW" value="$(var emit_ground_raw)"/>
-        <param name="EMIT_BUTTONS" value="$(var emit_buttons)"/>
-        <param name="EMIT_ACC" value="$(var emit_acc)"/>
-        <param name="EMIT_PROXIMITY" value="$(var emit_proximity)"/>
-        <param name="EMIT_MOTOR" value="$(var emit_motor)"/>
-        <param name="ENABLE_PROX_COMM" value="$(var enable_prox_comm)"/>
-      </param>
-    </param>
+    <param name="include_id_in_events" value="$(arg include_id_in_events)"/>
+    <param name="maximal_number_of_nodes" value="$(arg maximal_number_of_nodes)"/>
+    <rosparam param="nodes" subst_value="true">
+      thymio:
+        type: thymio-II
+        prefix: $(arg prefix)
+        accept: true
+      other:
+        accept: false
+    </rosparam>
+    <rosparam param="script" subst_value="true">
+      path: $(find thymio_driver)/aseba/$(arg script)
+      constants:
+        MOTOR_PERIOD: $(arg motor_period)
+        MOTOR_DEADBAND: $(arg motor_deadband)
+        ACC_PERIOD: $(arg acc_period)
+        BUTTONS_PERIOD: $(arg buttons_period)
+        EMIT_GROUND_RAW: $(arg emit_ground_raw)
+        EMIT_BUTTONS: $(arg emit_buttons)
+        EMIT_ACC: $(arg emit_acc)
+        EMIT_PROXIMITY: $(arg emit_proximity)
+        EMIT_MOTOR: $(arg emit_motor)
+        ENABLE_PROX_COMM: $(arg enable_prox_comm)
+    </rosparam>
   </node>
 
 </launch>

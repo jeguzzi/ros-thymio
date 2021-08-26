@@ -1,19 +1,45 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.0.2)
 project(thymio_description)
 
-find_package(urdf REQUIRED)
-find_package(ament_cmake REQUIRED)
-
-install(FILES meshes/base_simple.dae meshes/base_collision.dae meshes/wheel.dae
-  DESTINATION share/${PROJECT_NAME}/meshes
+find_package(catkin REQUIRED COMPONENTS
+	urdf
 )
 
-install(DIRECTORY urdf launch
-  DESTINATION share/${PROJECT_NAME}
+## Generate messages in the 'msg' folder
+#add_message_files(
+#  FILES
+# )
+
+## Generate added messages and services with any dependencies listed here
+#generate_messages(
+#  DEPENDENCIES
+#)
+
+###################################
+## catkin specific configuration ##
+###################################
+
+catkin_package(
+  CATKIN_DEPENDS urdf
 )
 
-install(FILES model.config
-  DESTINATION share/${PROJECT_NAME}
+###########
+## Build ##
+###########
+
+
+#############
+## Install ##
+#############
+
+install(DIRECTORY launch/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 )
 
-ament_package()
+install(DIRECTORY meshes/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/meshes
+)
+
+install(DIRECTORY urdf/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/urdf
+)

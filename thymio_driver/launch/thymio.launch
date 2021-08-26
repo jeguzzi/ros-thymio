@@ -2,18 +2,14 @@
 
   <arg name="name" default=""/>
   <arg name="device" default=""/>
-  <arg name="motor_calibration" default="$(find-pkg-share thymio_driver)/calibration/motor.yaml"/>
+  <!-- <arg name="motor_calibration" default="$(find thymio_driver)/calibration/motor.yaml"/> -->
 
-  <push-ros-namespace namespace="$(var name)"/>
-
-  <include file="$(find-pkg-share thymio_driver)/launch/base.launch">
-    <arg name="device" value="$(var device)"/>
-    <arg name="motor_calibration" value="$(var motor_calibration)"/>
-    <arg name="tf_prefix" value="$(var name)"/>
+  <include file="$(find thymio_driver)/launch/base.launch" ns="$(eval arg('name') or '/')">
+    <arg name="device" value="$(arg device)"/>
+    <arg name="tf_prefix" value="$(arg name)"/>
   </include>
-
-  <include file="$(find-pkg-share thymio_description)/launch/model.launch.py">
-    <arg name="name" value="$(var name)"/>
+  <include file="$(find thymio_description)/launch/model.launch">
+    <arg name="name" value="$(arg name)"/>
   </include>
 
 </launch>
