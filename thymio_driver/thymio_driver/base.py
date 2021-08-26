@@ -9,8 +9,9 @@ import rclpy.node
 import rclpy.parameter
 import rclpy.time
 import std_srvs.srv
-from asebaros_msgs.msg import AsebaEvent
-from asebaros_msgs.srv import GetNodeList, LoadScripts
+# from asebaros_msgs.msg import AsebaEvent
+from asebaros_msgs.msg import Event as AsebaEvent
+from asebaros_msgs.srv import GetNodeList, LoadScript
 from geometry_msgs.msg import (Quaternion, Transform, TransformStamped, Twist,
                                Vector3)
 from nav_msgs.msg import Odometry
@@ -82,9 +83,14 @@ class ProximityConversion:
 
     def aseba_to_si(self, value: int) -> float:
         if value == 0:
-            return float('inf')
+            # HACK(Jerome) Galactic does not like +/- inf
+            # return float('inf')
+            # return self.range_max
+            return -1.0
         if value >= self.max_value:
-            return -float('inf')
+            # HACK(Jerome) Galactic does not like +/- inf
+            return self.range_min
+            # return -float('inf')
         dist = self.x0 + sqrt((self.x0 ** 2 - self.c) * (1 - self.max_value / value))
         return max(self.range_min, min(dist, self.range_max))
 
@@ -118,8 +124,9 @@ class BaseDriver(rclpy.node.Node):  # type: ignore
         super(BaseDriver, self).__init__('driver', namespace=namespace)
         self.namespace = namespace
         if standalone:
-            self.wait_for_aseba_node()
-            self.load_script()
+            # TODO(Jerome): better semantic
+            if not self.wait_for_aseba_node():
+                self.load_script()
         self.clock = self.get_clock()
         if namespace:
             self.tf_prefix = namespace
@@ -128,7 +135,7 @@ class BaseDriver(rclpy.node.Node):  # type: ignore
         self.init_odometry()
         self.init_wheels()
         self.init_proximity()
-        self.set_parameters_callback(self.param_callback)
+        self.add_on_set_parameters_callback(self.param_callback)
         self.init()
         # REVIEW: not implemented yet in ROS2
         # self.on_shutdown(self.shutdown)
@@ -169,30 +176,32 @@ class BaseDriver(rclpy.node.Node):  # type: ignore
             return
 
         self.get_logger().info(f'Try to load script at {script_path}')
-        load_script_client = self.create_client(LoadScripts, 'aseba/load_script')
+        load_script_client = self.create_client(LoadScript, 'aseba/load_script')
         while not load_script_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('load_script service not available, waiting again...')
-        req = LoadScripts.Request(file_name=script_path)
+        req = LoadScript.Request(file_name=script_path)
         resp = load_script_client.call_async(req)
         rclpy.spin_until_future_complete(self, resp)
 
-    def wait_for_aseba_node(self) -> None:
-        get_aseba_nodes = self.create_client(GetNodeList, 'aseba/get_node_list')
+    def wait_for_aseba_node(self) -> bool:
+        get_aseba_nodes = self.create_client(GetNodeList, 'aseba/get_nodes')
         while not get_aseba_nodes.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('get_aseba_nodes service not available, waiting again...')
         while True:
             req = GetNodeList.Request()
             resp = get_aseba_nodes.call_async(req)
             rclpy.spin_until_future_complete(self, resp)
-            if self.kind in (node.name for node in resp.result().nodes):
-                break
+            nodes = [node for node in resp.result().nodes if node.name == self.kind]
+            if nodes:
+                self.get_logger().info(f'Found Thymio {nodes[0]}')
+                return nodes[0].running
             self.get_logger().info(f'Waiting for a node of kind {self.kind} ...')
             time.sleep(1)
 
     def _aseba(self, topic: str) -> str:
         # if self.namespace:
         #     return f'aseba/{self.namespace}/{topic}'
-        return f'aseba/{topic}'
+        return f'aseba/events/{topic}'
 
     def _ros(self, topic: str) -> str:
         # if self.namespace:

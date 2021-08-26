@@ -38,7 +38,7 @@
     <arg name="buttons_period" value="$(var buttons_period)"/>
   </include>
 
-  <node name="driver" pkg="thymio_driver" exec="$(var driver)" output="screen" required="true" args="--ros-args --log-level info">
+  <node name="driver" pkg="thymio_driver" exec="$(var driver)" output="screen" args="--ros-args --log-level info">
     <param name="axis_length" value="$(var axis_length)"/>
     <param name="odom_max_rate" value="$(var odom_max_rate)"/>
     <param from="$(var motor_calibration)"/>

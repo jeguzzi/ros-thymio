@@ -1,22 +1,22 @@
 import subprocess
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Type
 
 import rclpy
 import rclpy.executors
-from asebaros_msgs.msg import AsebaNodeList
+from asebaros_msgs.msg import NodeList as AsebaNodeList
 
 from .base import BaseDriver
 
 
 class Manager(rclpy.node.Node):  # type: ignore
 
-    _drivers: Dict[str, BaseDriver]
+    _drivers: Dict[str, Type[BaseDriver]]
 
     def __init__(self, executor: rclpy.executors.Executor) -> None:
         super(Manager, self).__init__('manager')
         self.ros_nodes: Dict[int, Tuple[str, BaseDriver]] = {}
         self.create_subscription(AsebaNodeList, 'aseba/nodes', self.on_aseba_node_list, 1)
-        self.launch_model = self.declare_parameter('launch_model', True).value
+        self.launch_model = self.declare_parameter('launch_model', "").value
         self.executor = executor
         self.model_process: Dict[int, subprocess.Popen[bytes]] = {}
 

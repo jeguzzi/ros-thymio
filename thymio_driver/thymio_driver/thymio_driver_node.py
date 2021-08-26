@@ -5,7 +5,7 @@ from typing import Any, Callable, List, Optional
 import rclpy
 import rclpy.duration
 import rclpy.timer
-from asebaros_msgs.msg import AsebaEvent
+from asebaros_msgs.msg import Event as AsebaEvent
 from sensor_msgs.msg import Imu, Joy, Range, Temperature
 from std_msgs.msg import Bool, ColorRGBA, Empty, Float32, Header, Int8, Int16
 from thymio_msgs.msg import Comm, Led, LedGesture, Sound, SystemSound
@@ -282,8 +282,11 @@ class ThymioDriver(BaseDriver):
         ir_threshold = self.ground_threshold
 
         for sensor, value in zip(self.ground_sensors, data):
-            sensor['msg'].range = float('inf') if (
-                value < ir_threshold) else -float('inf')
+            #  HACK(Jerome): Galactic does not like +/- inf
+            # sensor['msg'].range = float('inf') if (
+            #     value < ir_threshold) else -float('inf')
+            sensor['msg'].range = 1.0 if (
+                value < ir_threshold) else 0.0
             sensor['msg'].header.stamp = self.clock.now().to_msg()
             sensor['publisher'].publish(sensor['msg'])
 

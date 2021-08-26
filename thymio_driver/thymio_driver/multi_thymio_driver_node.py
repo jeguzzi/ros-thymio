@@ -7,7 +7,7 @@ from .manager import Manager
 from .thymio_driver_node import ThymioDriver
 
 
-class ThymioManager(Manager):  # type: ignore
+class ThymioManager(Manager):
 
     _drivers = {'thymio-II': ThymioDriver}
 

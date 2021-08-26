@@ -16,16 +16,29 @@
   <arg name="single" default="true"/>
   <let name="script" value="thymio_ros.aesl" if="$(var single)"/>
   <let name="script" value="multi_thymio_ros.aesl" unless="$(var single)"/>
+  <let name="include_id_in_events" value="false" if="$(var single)"/>
+  <let name="include_id_in_events" value="true" unless="$(var single)"/>
+  <let name="maximal_number_of_nodes" value="1" if="$(var single)"/>
+  <let name="maximal_number_of_nodes" value="0" unless="$(var single)"/>
+  <let name="prefix" value="" if="$(var single)"/>
+  <let name="prefix" value="thymio_" unless="$(var single)"/>
 
-  <node pkg="asebaros" exec="asebaros" name="asebaros" args="$(var device) -p $(var port) --ros-args --log-level info" output="screen" required="true">
-    <param name="single" value="$(var single)"/>
+  <node pkg="asebaros" exec="asebaros" name="asebaros" args="$-ros-args --log-level info" output="screen">
+    <param name="set_id_variable" value="false"/>
+    <param name="targets" value="$(var device)" value-sep=","/>
+    <param name="port" value="$(var port)"/>
+    <param name="shutdown_on_unconnect" value="false"/>
+    <param name="reload_script_on_reconnect" value="false"/>
+    <param name="include_id_in_events" value="$(var include_id_in_events)"/>
+    <param name="maximal_number_of_nodes" value="$(var maximal_number_of_nodes)"/>
     <param name="nodes">
-      <param name="thymio-II">
-        <param name="prefix" value="thymio_"/>
-        <param name="accept_all" value="true"/>
+      <param name="thymio">
+        <param name="type" value="thymio-II"/>
+        <param name="prefix" value="$(var prefix)"/>
+        <param name="accept" value="true"/>
       </param>
-      <param name="*">
-        <param name="accept_all" value="false"/>
+      <param name="other">
+        <param name="accept" value="false"/>
       </param>
     </param>
     <param name="script">
