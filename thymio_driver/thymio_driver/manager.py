@@ -41,8 +41,9 @@ class Manager:
         _, node = self.ros_nodes.pop(uid)
         # TODO(ROS1): maybe we should deinitialized all subscribers, publishers, ...
         # node.destroy_node()
-        process = self.model_process.pop(uid)
-        process.terminate()
+        if uid in self.model_process:
+            process = self.model_process.pop(uid)
+            process.terminate()
 
     def __del__(self) -> None:
         for uid in list(self.ros_nodes):
