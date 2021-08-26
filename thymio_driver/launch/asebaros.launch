@@ -6,7 +6,6 @@
   <arg name="emit_buttons" default="1"/>
   <arg name="emit_acc" default="1"/>
   <arg name="emit_ground_raw" default="0"/>
-  <arg name="emit_buttons" default="0"/>
   <arg name="emit_proximity" default="1"/>
   <arg name="enable_prox_comm" default="1"/>
   <arg name="motor_deadband" default="10"/>
@@ -25,6 +24,7 @@
 
   <node pkg="asebaros" exec="asebaros" name="asebaros" args="$-ros-args --log-level info" output="screen">
     <param name="set_id_variable" value="false"/>
+    <param name="reset_on_closing" value="true"/>
     <param name="targets" value="$(var device)" value-sep=","/>
     <param name="port" value="$(var port)"/>
     <param name="shutdown_on_unconnect" value="false"/>
