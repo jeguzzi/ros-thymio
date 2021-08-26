@@ -43,8 +43,9 @@ class Manager(rclpy.node.Node):  # type: ignore
         _, node = self.ros_nodes.pop(uid)
         self.executor.remove_node(node)
         node.destroy_node()
-        process = self.model_process.pop(uid)
-        process.terminate()
+        if uid in self.model_process:
+            process = self.model_process.pop(uid)
+            process.terminate()
 
     def __del__(self) -> None:
         for uid in list(self.ros_nodes):
