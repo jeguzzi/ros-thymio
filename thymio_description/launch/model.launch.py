@@ -7,6 +7,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchContext, LaunchDescription
 from launch.utilities import perform_substitutions
 from launch_ros.actions import Node
+from launch_ros.actions import PushRosNamespace
 
 
 def urdf(name: str = '', proximity_max_range: float = 0.12, proximity_resolution: float = 0.005,
@@ -30,13 +31,15 @@ def robot_state_publisher(context: LaunchContext,
                           **substitutions: launch.substitutions.LaunchConfiguration
                           ) -> List[Node]:
     kwargs = {k: perform_substitutions(context, [v]) for k, v in substitutions.items()}
+    namespace = kwargs.pop('namespace')
     params = {'robot_description': urdf(**kwargs)}
     with open('test.urdf', 'w+') as f:
         f.write(params['robot_description'])
     node = Node(
         package='robot_state_publisher',
-        node_executable='robot_state_publisher',
-        node_name='robot_state_publisher',
+        executable='robot_state_publisher',
+        name='robot_state_publisher',
+        namespace=namespace,
         parameters=[params], output='screen')
     return [node]
 
@@ -48,10 +51,13 @@ def generate_launch_description() -> None:
         for i, (k, _) in enumerate(urdf.__annotations__.items()) if k != 'return']
     kwargs = {k: launch.substitutions.LaunchConfiguration(k)
               for (k, _) in urdf.__annotations__.items() if k != 'return'}
+    arguments.append(launch.actions.DeclareLaunchArgument(
+        'namespace', default_value='', description=''))
+    kwargs['namespace'] = launch.substitutions.LaunchConfiguration('namespace')
     return LaunchDescription(
         arguments + [
-            launch.actions.LogInfo(msg=launch.substitutions.LaunchConfiguration('name')),
-            launch.actions.LogInfo(msg=launch.substitutions.LaunchConfiguration('publish_ground_truth')),
+            # launch.actions.LogInfo(msg=launch.substitutions.LaunchConfiguration('name')),
+            # launch.actions.LogInfo(msg=launch.substitutions.LaunchConfiguration('publish_ground_truth')),
             launch.actions.OpaqueFunction(
                 function=robot_state_publisher,
                 kwargs=kwargs),
