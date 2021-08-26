@@ -19,11 +19,12 @@
   <arg name="include_id_in_events" value="true" unless="$(arg single)"/>
   <arg name="maximal_number_of_nodes" value="1" if="$(arg single)"/>
   <arg name="maximal_number_of_nodes" value="0" unless="$(arg single)"/>
-  <arg name="prefix" value="" if="$(arg single)"/>
+  <arg name="prefix" value="''" if="$(arg single)"/>
   <arg name="prefix" value="thymio_" unless="$(arg single)"/>
 
   <node pkg="asebaros" type="asebaros" name="asebaros" output="screen">
     <param name="set_id_variable" value="false"/>
+    <param name="reset_on_closing" value="true"/>
     <rosparam param="targets" subst_value="true">
       [$(arg device),]
     </rosparam>

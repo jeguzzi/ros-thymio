@@ -38,7 +38,19 @@ catkin_package(
   CATKIN_DEPENDS rospy asebaros_msgs std_msgs std_srvs geometry_msgs tf sensor_msgs nav_msgs thymio_msgs
 )
 
-catkin_install_python(PROGRAMS script/thymio_driver_node.py script/multi_thymio_driver_node.py
+###########
+## Build ##
+###########
+
+#############
+## Install ##
+#############
+
+catkin_install_python(PROGRAMS
+	script/thymio_driver_node.py
+	script/multi_thymio_driver_node.py
+	script/follow_square.py
+	script/calibrate_motors.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
@@ -53,13 +65,3 @@ install(DIRECTORY cfg/
 install(DIRECTORY aseba/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/aseba
 )
-
-
-###########
-## Build ##
-###########
-
-
-#############
-## Install ##
-#############

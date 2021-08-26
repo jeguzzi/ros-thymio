@@ -21,7 +21,6 @@
   <arg name="acc_period" default="2"/>
   <arg name="buttons_period" default="5"/>
 
-
   <include file="$(find thymio_driver)/launch/asebaros.launch">
     <arg name="single" value="$(arg single)"/>
     <arg name="device" value="$(arg device)"/>
@@ -40,9 +39,10 @@
   <node name="driver" pkg="thymio_driver" type="$(arg driver)"  output="screen">
     <param name="axis_length" value="$(arg axis_length)"/>
     <param name="odom_max_rate" value="$(arg odom_max_rate)"/>
-    <!-- <param from="$(arg motor_calibration)"/> -->
-    <param name="tf_prefix" value="$(arg tf_prefix)"/>
     <param name="launch_model" value="thymio_description model.launch"/>
+    <param name="tf_prefix" value="$(arg tf_prefix)"/>
   </node>
+
+      <!-- <param from="$(arg motor_calibration)"/> -->
 
 </launch>

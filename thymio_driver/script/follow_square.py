@@ -1,42 +1,38 @@
-import math
-import time
-from typing import Any
+#!/usr/bin/env python
 
-import rclpy
-import rclpy.node
-import rclpy.publisher
-import std_srvs.srv
+import math
+
+import rospy
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 
 
-class FollowSquare(rclpy.node.Node):  # type: ignore
+class FollowSquare:
 
     def __init__(self) -> None:
-        super(FollowSquare, self).__init__("do_square")
-        self.create_client(std_srvs.srv.Empty, 'is_ready').wait_for_service()
-        speed = self.declare_parameter('speed', 0.05).value
-        axis_length = self.declare_parameter('axis_length', 0.0935).value
-        side_length = self.declare_parameter('side', 0.6).value
-        self.get_logger().info('Init open loop square')
-        self.pub = self.create_publisher(Twist, 'cmd_vel', 1)
-        self.create_subscription(Odometry, 'odom', self.update_odom, 1)
+        rospy.init_node("do_square")
+        rospy.wait_for_service('is_ready')
+        speed = rospy.get_param('~speed', 0.05)
+        axis_length = rospy.get_param('~axis_length', 0.0935)
+        side_length = rospy.get_param('~side', 0.6)
+        rospy.loginfo('Init open loop square')
+        self.pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
+        rospy.Subscriber('odom', Odometry, self.update_odom)
         self.pose = (0.0, 0.0, 0.0)
         self.sleep(1)
-        rclpy.spin_once(self)
-        self.get_logger().info(
+        rospy.loginfo(
             f'Start square with speed {speed:.3f} m/s and side {side_length:.3f} m')
         for _ in range(4):
-            self.get_logger().info(f'Side from {self.pose}')
+            rospy.loginfo(f'Side from {self.pose}')
             self.advance(side_length, speed=speed)
-            self.get_logger().info(f'Turn from {self.pose}')
+            rospy.loginfo(f'Turn from {self.pose}')
             self.turn(math.pi / 2, angular_speed=(speed / axis_length))
             self.sleep(1)
-        self.get_logger().info(f'Done at {self.pose}')
+        rospy.loginfo(f'Done at {self.pose}')
         self.sleep(1)
 
     def sleep(self, dt: float) -> None:
-        time.sleep(dt)
+        rospy.sleep(dt)
 
     def update_odom(self, msg: Odometry) -> None:
         position = msg.pose.pose.position
@@ -45,7 +41,6 @@ class FollowSquare(rclpy.node.Node):  # type: ignore
 
     def stop(self) -> None:
         self.pub.publish(Twist())
-        rclpy.spin_once(self)
 
     def advance(self, length: float, speed: float) -> None:
         msg = Twist()
@@ -62,6 +57,9 @@ class FollowSquare(rclpy.node.Node):  # type: ignore
         self.stop()
 
 
-def main(args: Any = None) -> None:
-    rclpy.init(args=args)
+def main() -> None:
     FollowSquare()
+
+
+if __name__ == '__main__':
+    main()

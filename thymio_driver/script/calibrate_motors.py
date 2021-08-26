@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import csv
 import enum
 import os
@@ -5,14 +7,13 @@ from dataclasses import dataclass
 from datetime import datetime as dt
 from typing import Any, Dict, List, NamedTuple, Optional
 
+import rospy
 import numpy as np
 import yaml
 from scipy.optimize import curve_fit
 from typing_extensions import Literal
 
-import rclpy.node
 from asebaros_msgs.msg import AsebaEvent
-from rclpy.time import Time
 from std_msgs.msg import Bool
 from thymio_msgs.msg import Led, SystemSound
 
@@ -27,8 +28,7 @@ class CalibrationResult(NamedTuple):
     params: List[float]
     kind: str
 
-    @property
-    def dict(self) -> Dict[str, Any]:
+    def as_dict(self) -> Dict[str, Any]:
         return {'kind': self.kind, 'q': self.params}
 
 
@@ -57,45 +57,42 @@ DEFAULT_MOTOR_SPEEDS: List[float] = [20, 40, 60, 80, 100, 120, 140, 160, 200, 25
                                      400, 450]
 
 
-class Calibration(rclpy.node.Node):  # type: ignore
+class Calibration:
 
     def __init__(self) -> None:
-        super(Calibration, self).__init__('motor_calibration')
-        self.clock = rclpy.clock.Clock(clock_type=rclpy.clock.ClockType.ROS_TIME)
-        self.gap = self.declare_parameter('gap', 100).value
-        self.axis_length: float = self.declare_parameter('axis_length', 0.0935).value
-        self.target_number_of_samples = self.declare_parameter('number_of_samples', 1).value
-        self.motor_speeds = self.declare_parameter('motor_speeds', DEFAULT_MOTOR_SPEEDS).value
-        self.get_logger().warn(f'{self.motor_speeds}, {type(self.motor_speeds)}')
-        self.save_to = self.declare_parameter('save_to', '').value
+        rospy.init_node('motor_calibration')
+        self.gap = rospy.get_param('gap', 100)
+        self.axis_length: float = rospy.get_param('axis_length', 0.0935)
+        self.target_number_of_samples = rospy.get_param('number_of_samples', 1)
+        self.motor_speeds = rospy.get_param('motor_speeds', DEFAULT_MOTOR_SPEEDS)
+        rospy.logwarn(f'{self.motor_speeds}, {type(self.motor_speeds)}')
+        self.save_to = rospy.get_param('save_to', '')
         os.makedirs(self.save_to, exist_ok=True)
-        self.should_save_samples = self.declare_parameter('save_samples', False).value
+        self.should_save_samples = rospy.get_param('save_samples', False)
         self.sample_folder = os.path.join(self.save_to, dt.now().isoformat())
         self.state = CalibrationState.waiting_button
         self.pick: Optional[float] = None
         self._motor_speed = 0
-        self.sound_pub = self.create_publisher(SystemSound, 'sound/play/system', 1)
-        self.pub = self.create_publisher(AsebaEvent, 'aseba/events/set_speed', 1)
-        self.led_pub = self.create_publisher(Led, 'led', 1)
-        self.create_subscription(AsebaEvent, 'aseba/events/ground', self.update_state, 1)
-        self.create_subscription(Bool, 'buttons/center', self.button, 1)
-        for motor in self.declare_parameter('motors', ['right', 'left']).value:
+        self.sound_pub = rospy.Publisher('sound/play/system', SystemSound, queue_size=1)
+        self.pub = rospy.Publisher('aseba/events/set_speed', AsebaEvent, queue_size=1)
+        self.led_pub = rospy.Publisher('led', Led, queue_size=1)
+        rospy.Subscriber('aseba/events/ground', AsebaEvent, self.update_state)
+        rospy.Subscriber('buttons/center', Bool, self.button)
+        for motor in rospy.get_param('motors', ['right', 'left']):
             self.calibrate(motor=motor)
-        self.get_logger().info('Motor calibration was successful')
+        rospy.loginfo('Motor calibration was successful')
 
     def button(self, msg: Bool) -> None:
-        self.get_logger().info(f'button {self.state}')
+        rospy.loginfo(f'button {self.state}')
         if self.state == CalibrationState.waiting_button:
             self.state = CalibrationState.waiting_ground
-            self.get_logger().info(f'switch to {self.state}')
+            rospy.loginfo(f'switch to {self.state}')
 
     def ping(self, sound: SystemSound = SystemSound.TARGET_OK) -> None:
         self.sound_pub.publish(SystemSound(sound=sound))
 
     def sleep(self, dt: float) -> None:
-        # self.get_logger().info(f'will sleep for {dt}')
-        rclpy.spin_once(self, timeout_sec=dt)
-        # self.get_logger().info(f'has slept for {dt}')
+        rospy.sleep(dt)
 
     def calibrate(self, motor: Literal['left', 'right'] = 'right', angle: float = (2 * np.pi)
                   ) -> None:
@@ -106,7 +103,7 @@ class Calibration(rclpy.node.Node):  # type: ignore
         self.motor_speed = 0
         self.angle = angle
         standing_wheel = 'right' if self.motor == 'left' else 'left'
-        self.get_logger().info(
+        rospy.loginfo(
             (f'Place the robot with the {standing_wheel} wheel at the center of the T '
              'and press the central button when the robot is ready'))
         self.ping()
@@ -116,22 +113,22 @@ class Calibration(rclpy.node.Node):  # type: ignore
         self.sleep(3)
         while self.state == CalibrationState.waiting_ground:
             self.sleep(1)
-        self.get_logger().info(f'Start calibrating {self.motor} motor using thresholds {self.ths}')
+        rospy.loginfo(f'Start calibrating {self.motor} motor using thresholds {self.ths}')
         _n = 1
         for motor_speed in self.motor_speeds:
             self.motor_speed = motor_speed
-            self.get_logger().info(f'Set motor speed to {motor_speed}')
+            rospy.loginfo(f'Set motor speed to {motor_speed}')
             _n += self.target_number_of_samples
             while len(self._samples) < _n:
                 self.sleep(0.01)
         self.motor_speed = 0
-        self.get_logger().debug(
+        rospy.logdebug(
             f'Calculate with samples {self._samples}')
         if self.should_save_samples:
             self.save_samples()
         samples = np.array(self._samples)
         results = calibrate(samples)
-        self.get_logger().info(f'Calibration of motor {self.motor} done: {results}')
+        rospy.loginfo(f'Calibration of motor {self.motor} done: {results}')
         self.save_calibration(results)
 
     def save_samples(self) -> None:
@@ -146,10 +143,10 @@ class Calibration(rclpy.node.Node):  # type: ignore
         name = f'{self.motor}.yaml'
         path = os.path.join(self.sample_folder, name)
         with open(path, 'w') as f:
-            yaml.dump(result.dict, f)
+            yaml.dump(result.as_dict(), f)
         # l_path = os.path.join(os.path.basename(self.sample_folder), name)
         # t_path = os.path.join(self.sample_folder, '..', name)
-        # self.get_logger().info(f'Create symlink {t_path} -> {path}')
+        # rospy.loginfo(f'Create symlink {t_path} -> {path}')
         # try:
         #     os.symlink(l_path, t_path)
         # except OSError:
@@ -181,7 +178,7 @@ class Calibration(rclpy.node.Node):  # type: ignore
         if self.pick is not None:
             dt = pick - self.pick
             self._samples.append([self.motor_speed, self.speed(dt)])
-            self.get_logger().info(f'Added sample {dt:.3f} -> {self._samples[-1]}')
+            rospy.loginfo(f'Added sample {dt:.3f} -> {self._samples[-1]}')
         self.pick = pick
 
     def update_state(self, msg: AsebaEvent) -> None:
@@ -203,20 +200,18 @@ class Calibration(rclpy.node.Node):  # type: ignore
         else:
             v = msg.data[1]
             th = self.ths[1]
-        self.get_logger().info(f'update_state {line.state} {v} {th} -> ?')
-        stamp = Time.from_msg(msg.stamp).nanoseconds * 1e-9
+        rospy.loginfo(f'update_state {line.state} {v} {th} -> ?')
         if v > th and line.state == LineState.UNKNOWN:
             line.state = LineState.OFF
         if v < th and line.state == LineState.OFF:
             line.state = LineState.IN
-            line.in_at_time = stamp
+            line.in_at_time = msg.stamp
         if v > th and line.state == LineState.IN:
             line.state = LineState.OFF
-            pick = (stamp + line.in_at_time) / 2
-            self.get_logger().info(f"Line after {pick} s")
+            pick = (msg.stamp.to_sec() + line.in_at_time) / 2
+            rospy.loginfo(f"Line after {pick} s")
             self.add_pick(pick)
 
 
-def main(args: Any = None) -> None:
-    rclpy.init(args=args)
+if __name__ == '__main__':
     Calibration()
