@@ -1,8 +1,10 @@
 import time
 from math import copysign, cos, sin, sqrt
 from typing import Dict, List, Optional, Tuple, TypeVar
-
-from typing_extensions import TypedDict
+try:
+    from typing import TypedDict
+except ImportError:
+    from typing_extensions import TypedDict
 
 import rospy
 import std_srvs.srv
