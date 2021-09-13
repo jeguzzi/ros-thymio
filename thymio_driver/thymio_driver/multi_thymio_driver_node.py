@@ -16,6 +16,9 @@ def main(args: Any = None) -> None:
     rclpy.init(args=args)
     executor = rclpy.executors.SingleThreadedExecutor()
     manager = ThymioManager(executor)
-    executor.spin()
+    try:
+        executor.spin()
+    except KeyboardInterrupt:
+        pass
     manager.destroy_node()
     rclpy.shutdown()

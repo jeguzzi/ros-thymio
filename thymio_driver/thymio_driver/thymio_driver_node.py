@@ -308,6 +308,9 @@ class ThymioDriver(BaseDriver):
 def main(args: Any = None) -> None:
     rclpy.init(args=args)
     thymio_driver = ThymioDriver(namespace='', standalone=True)
-    rclpy.spin(thymio_driver)
+    try:
+        rclpy.spin(thymio_driver)
+    except KeyboardInterrupt:
+        pass
     thymio_driver.destroy_node()
     rclpy.shutdown()
