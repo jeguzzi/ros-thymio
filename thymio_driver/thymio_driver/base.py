@@ -294,8 +294,8 @@ class BaseDriver(object):
             pub.publish(rmsg)
         if self.publish_proximity_as_laser:
             self.laser_msg.ranges = [
-                min(converter.range_max, max(converter.range_min, msg.range)) + self.laser_shift
-                for _, msg, converter in self.laser_sensors]
+                min(converter.range_max, max(converter.range_min, rmsg.range)) + self.laser_shift
+                for _, rmsg, converter in self.laser_sensors]
             self.laser_msg.intensities = [float(msg.data[i]) for i in self.laser_indices]
             self.laser_msg.header.stamp = rospy.Time.now()
             self.laser_publisher.publish(self.laser_msg)
