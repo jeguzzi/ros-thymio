@@ -50,7 +50,7 @@ catkin_install_python(PROGRAMS
 	script/thymio_driver_node.py
 	script/multi_thymio_driver_node.py
 	script/follow_square.py
-	script/calibrate_motors.py
+	# script/calibrate_motors.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

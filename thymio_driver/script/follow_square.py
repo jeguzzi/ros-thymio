@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+# type: ignore
 import math
 
 import rospy
@@ -7,9 +7,9 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 
 
-class FollowSquare:
+class FollowSquare(object):
 
-    def __init__(self) -> None:
+    def __init__(self):
         rospy.init_node("do_square")
         rospy.wait_for_service('is_ready')
         speed = rospy.get_param('~speed', 0.05)
@@ -31,25 +31,25 @@ class FollowSquare:
         rospy.loginfo(f'Done at {self.pose}')
         self.sleep(1)
 
-    def sleep(self, dt: float) -> None:
+    def sleep(self, dt):
         rospy.sleep(dt)
 
-    def update_odom(self, msg: Odometry) -> None:
+    def update_odom(self, msg):
         position = msg.pose.pose.position
         angle = 2.0 * math.asin(msg.pose.pose.orientation.z)
         self.pose = (position.x, position.y, angle)
 
-    def stop(self) -> None:
+    def stop(self):
         self.pub.publish(Twist())
 
-    def advance(self, length: float, speed: float) -> None:
+    def advance(self, length, speed):
         msg = Twist()
         msg.linear.x = speed
         self.pub.publish(msg)
         self.sleep(length / speed)
         self.stop()
 
-    def turn(self, angle: float, angular_speed: float) -> None:
+    def turn(self, angle, angular_speed):
         msg = Twist()
         msg.angular.z = angular_speed
         self.pub.publish(msg)
@@ -57,7 +57,7 @@ class FollowSquare:
         self.stop()
 
 
-def main() -> None:
+def main():
     FollowSquare()
 
 

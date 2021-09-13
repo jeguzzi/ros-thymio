@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+# type: ignore
 import rospy
 
 from thymio_driver.manager import Manager
@@ -11,7 +11,7 @@ class ThymioManager(Manager):
     _drivers = {'thymio-II': ThymioDriver}
 
 
-def main() -> None:
+def main():
     rospy.init_node('manager')
     ThymioManager()
     rospy.spin()

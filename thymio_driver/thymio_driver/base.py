@@ -1,10 +1,6 @@
+# type: ignore
 import time
 from math import copysign, cos, sin, sqrt
-from typing import Dict, List, Optional, Tuple, TypeVar
-try:
-    from typing import TypedDict
-except ImportError:
-    from typing_extensions import TypedDict
 
 import rospy
 import std_srvs.srv
@@ -18,52 +14,42 @@ from sensor_msgs.msg import JointState, LaserScan, Range
 from std_msgs.msg import Header
 from tf2_ros.transform_broadcaster import TransformBroadcaster
 
-T = TypeVar('T')
 
-
-def sign(x: float) -> int:
+def sign(x):
     return int(copysign(1, x))
 
 
-MotorCalibration = TypedDict('MotorCalibration',
-                             {'parameters': List[float], 'kind': str, 'deadband': int})
+class MotorSpeedConversion(object):
 
-ProximityCalibration = TypedDict('ProximityCalibration',
-                                 {'parameters': List[float], 'kind': str,
-                                  'range_max': float, 'range_min': float, 'fov': float})
-
-
-class MotorSpeedConversion:
-
-    def __init__(self, calibration: MotorCalibration) -> None:
+    def __init__(self, calibration):
         if calibration['kind'] != 'quadratic':
             raise ValueError(f"Unknown calibration {calibration['kind']}")
         self.parameters = calibration['parameters']
         self.deadband = calibration['deadband']
 
     @property
-    def parameters(self) -> List[float]:
+    def parameters(self):
         return [self.q0, self.q1]
 
     @parameters.setter
-    def parameters(self, value: List[float]) -> None:
+    def parameters(self, value):
         self.q0, self.q1 = value[:2]
 
-    def aseba_to_si(self, value: int) -> float:
+    def aseba_to_si(self, value):
         # if abs(value) < self.deadband:
         #     return 0.0
         return self.q0 * value + self.q1 * value * abs(value)
 
-    def si_to_aseba(self, value: float) -> int:
+    def si_to_aseba(self, value):
         if self.q1 == 0:
             return int(round(value / self.q0))
         return int(round(0.5 * sign(value) *
                    (- self.q0 + sqrt(self.q0 ** 2 + 4 * self.q1 * abs(value))) / self.q1))
 
 
-class ProximityConversion:
+class ProximityConversion(object):
 
-    def __init__(self, calibration: ProximityCalibration) -> None:
+    def __init__(self, calibration):
         if calibration['kind'] != 'power':
             raise ValueError(f"Unknown calibration {calibration['kind']}")
         self.parameters = calibration['parameters']
@@ -72,33 +58,26 @@ class ProximityConversion:
         self.fov = calibration['fov']
 
     @property
-    def parameters(self) -> List[float]:
+    def parameters(self):
         return [self.max_value, self.x0, self.c]
 
     @parameters.setter
-    def parameters(self, value: List[float]) -> None:
+    def parameters(self, value):
         self.max_value, self.x0, self.c = value[:3]
 
-    def aseba_to_si(self, value: int) -> float:
+    def aseba_to_si(self, value):
         if value == 0:
-            # HACK(Jerome) Galactic does not like +/- inf
-            # return float('inf')
-            # return self.range_max
-            return -1.0
+            return float('inf')
         if value >= self.max_value:
-            # HACK(Jerome) Galactic does not like +/- inf
-            return self.range_min
-            # return -float('inf')
+            return -float('inf')
         dist = self.x0 + sqrt((self.x0 ** 2 - self.c) * (1 - self.max_value / value))
         return max(self.range_min, min(dist, self.range_max))
 
 
-ProximitySensor = Tuple[rospy.Publisher, Range, ProximityConversion]
-
 _m = 2 ** 15
 
 
-def delta(v1: int, v0: int) -> int:
+def delta(v1, v0):
     diff = v1 - v0
     if diff > _m:
         diff -= 2 * _m
@@ -107,23 +86,15 @@ def delta(v1: int, v0: int) -> int:
     return diff
 
 
-class BaseDriver:
-    kind: str
-    axis_length: float
-    wheel_radius: float
-    max_aseba_speed: int
-    motor_calibration: MotorCalibration
-    proximity_names: List[str]
-    proximity_calibration: ProximityCalibration
-    laser_angles: Dict[str, float]
-    laser_shift: float
+class BaseDriver(object):
 
-    def __init__(self, namespace: str = '', standalone: bool = True) -> None:
+    def __init__(self, namespace='', standalone=True):
         # TODO(ROS1): check if we don't need the namespace enaymbe
         # super(BaseDriver, self).__init__('driver', namespace=namespace)
-        rospy.loginfo(f"Create {type(self)} with namespace {namespace}, standalone {standalone}")
+        rospy.loginfo("Create %s with namespace %s, standalone %s",
+                      type(self), namespace, standalone)
         self.namespace = namespace
-        self.node_id: Optional[int] = None
+        self.node_id = None
         if standalone:
             # TODO(Jerome): better semantic
             if not self.wait_for_aseba_node():
@@ -164,12 +135,12 @@ class BaseDriver:
     #     response = SetParametersResult(successful=True)
     #     return response
 
-    def update_odom_convariance(self) -> None:
+    def update_odom_convariance(self):
         si_band = sum(c.aseba_to_si(c.deadband) for c in self.motor_speed_conversion.values()) / 2
         self.odom_msg.twist.covariance[0] = speed_cov = 0.5 * si_band ** 2
         self.odom_msg.twist.covariance[-1] = speed_cov / (self.axis_length ** 2)
 
-    def load_script(self) -> None:
+    def load_script(self):
         # default_script = os.path.join(get_package_share_directory(
         #     'thymio_driver'), 'aseba', 'thymio_ros.aesl')
         default_script = ''
@@ -178,7 +149,7 @@ class BaseDriver:
             rospy.logwarn('Script not provided!')
             return
 
-        rospy.loginfo(f'Try to load script at {script_path}')
+        rospy.loginfo('Try to load script at %s', format(script_path))
         while True:
             try:
                 rospy.wait_for_service('aseba/load_script', timeout=1.0)
@@ -189,7 +160,7 @@ class BaseDriver:
         if self.node_id is not None:
             load_script(file_name=script_path, node_ids=[self.node_id])
 
-    def wait_for_aseba_node(self) -> bool:
+    def wait_for_aseba_node(self):
         while True:
             try:
                 rospy.wait_for_service('aseba/get_nodes', timeout=1.0)
@@ -201,34 +172,34 @@ class BaseDriver:
             resp = get_aseba_nodes()
             nodes = [node for node in resp.nodes if node.name == self.kind]
             if nodes:
-                rospy.loginfo(f'Found Thymio {nodes[0]}')
+                rospy.loginfo('Found Thymio %s', {nodes[0]})
                 self.node_id = nodes[0].id
                 return nodes[0].running
-            rospy.loginfo(f'Waiting for a node of kind {self.kind} ...')
+            rospy.loginfo('Waiting for a node of kind %s ...', self.kind)
             time.sleep(1)
 
-    def _aseba(self, topic: str) -> str:
+    def _aseba(self, topic):
         if self.namespace:
-            return f'{self.namespace}/aseba/events/{topic}'
-        return f'aseba/events/{topic}'
+            return '{0}/aseba/events/{1}'.format(self.namespace, topic)
+        return 'aseba/events/{0}'.format(topic)
 
-    def _ros(self, topic: str) -> str:
+    def _ros(self, topic):
         if self.namespace:
-            return f'{self.namespace}/{topic}'
+            return '{0}/{1}'.format(self.namespace, topic)
         return topic
 
-    def _frame(self, name: str) -> str:
+    def _frame(self, name):
         if self.tf_prefix:
-            return f'{self.tf_prefix}/{name}'
+            return '{0}/{1}'.format(self.tf_prefix, name)
         return name
 
-    def init_odometry(self) -> None:
+    def init_odometry(self):
         self.theta = 0.0
         self.x = 0.0
         self.y = 0.0
         self.odom_frame = self._frame(rospy.get_param('~odom_frame', 'odom'))
         self.robot_frame = self._frame(rospy.get_param('~robot_frame', 'base_link'))
-        self.last_odom_stamp: Optional[rospy.Time] = None
+        self.last_odom_stamp = None
         odom_rate = rospy.get_param('~odom_max_rate', -1)
         if odom_rate == 0:
             self.odom_min_period = -1
@@ -242,11 +213,11 @@ class BaseDriver:
         self.tf_broadcaster = TransformBroadcaster()
         self.odom_pub = rospy.Publisher(self._ros('odom'), Odometry, queue_size=1)
 
-    def load_calibration(self, group: str, name: str, default: T) -> T:
-        return {key: rospy.get_param(f'~{group}/{name}/{key}', value)
-                for key, value in default.items()}  # type: ignore
+    def load_calibration(self, group, name, default):
+        return {key: rospy.get_param('~{0}/{1}/{2}'.format(group, name, key), value)
+                for key, value in default.items()}
 
-    def init_wheels(self) -> None:
+    def init_wheels(self):
         self.left_wheel_angle = 0.0
         self.right_wheel_angle = 0.0
         self.left_steps = 0
@@ -258,9 +229,9 @@ class BaseDriver:
         self.motor_speed_conversion = {motor: MotorSpeedConversion(motor_calibration[motor])
                                        for motor in ('left', 'right')}
         self.left_wheel_motor_speed = self.motor_speed_conversion['left'].si_to_aseba
-        rospy.loginfo(f'Init left wheel with calibration {motor_calibration["left"]}')
+        rospy.loginfo('Init left wheel with calibration %s', motor_calibration["left"])
         self.right_wheel_motor_speed = self.motor_speed_conversion['right'].si_to_aseba
-        rospy.loginfo(f'Init right wheel with calibration {motor_calibration["right"]}')
+        rospy.loginfo('Init right wheel with calibration %s', motor_calibration["right"])
         self.update_odom_convariance()
         left_wheel_joint = rospy.get_param('~left_wheel_joint', 'left_wheel_joint')
         right_wheel_joint = rospy.get_param('~right_wheel_joint', 'right_wheel_joint')
@@ -272,17 +243,17 @@ class BaseDriver:
             self._aseba('odometry'), AsebaEvent, self.on_aseba_odometry_event)
         rospy.Subscriber(self._ros('cmd_vel'), Twist, self.on_cmd_vel)
 
-    def init_proximity(self) -> None:
+    def init_proximity(self):
 
-        self.proximity_sensors: List[ProximitySensor] = []
+        self.proximity_sensors = []
 
         for name in self.proximity_names:
-            pub = rospy.Publisher(self._ros(f'proximity/{name}'), Range, queue_size=1)
+            pub = rospy.Publisher(self._ros('proximity/{0}'.format(name)), Range, queue_size=1)
             converter = ProximityConversion(
                 self.load_calibration('proximity_calibration', name,
                                       default=self.proximity_calibration))
             msg = Range(
-                header=Header(frame_id=self._frame(f'proximity_{name}_link')),
+                header=Header(frame_id=self._frame('proximity_{0}_link'.format(name))),
                 radiation_type=Range.INFRARED,
                 field_of_view=converter.fov,
                 min_range=converter.range_min,
@@ -310,13 +281,13 @@ class BaseDriver:
         rospy.Subscriber(
             self._aseba('proximity'), AsebaEvent, self.on_aseba_proximity_event)
 
-    def init(self) -> None:
+    def init(self):
         pass
 
-    def ready(self, req: std_srvs.srv.EmptyRequest) -> std_srvs.srv.EmptyResponse:
+    def ready(self, req):
         return std_srvs.srv.EmptyResponse()
 
-    def on_aseba_proximity_event(self, msg: AsebaEvent) -> None:
+    def on_aseba_proximity_event(self, msg):
         for value, (pub, rmsg, converter) in zip(msg.data, self.proximity_sensors):
             rmsg.range = converter.aseba_to_si(value)
             rmsg.header.stamp = rospy.Time.now()
@@ -330,15 +301,15 @@ class BaseDriver:
             self.laser_publisher.publish(self.laser_msg)
 
     # ======== we send the speed to the aseba running on the robot  ========
-    def set_aseba_speed(self, values: List[int]) -> None:
+    def set_aseba_speed(self, values):
         self.aseba_pub.publish(AsebaEvent(stamp=rospy.Time.now(), source=0, data=values))
 
     # ======== stop the robot safely ========
-    def shutdown(self) -> None:
+    def shutdown(self):
         self.set_aseba_speed([0, 0])
 
     # ======== processing odometry events received from the robot ========
-    def on_aseba_odometry_event(self, data: AsebaEvent) -> None:
+    def on_aseba_odometry_event(self, data):
         now = data.stamp
         if self.last_odom_stamp is None:
             self.last_odom_stamp = now
@@ -411,7 +382,7 @@ class BaseDriver:
             transform=Transform(translation=translation, rotation=pose.orientation))
         self.tf_broadcaster.sendTransform(transform)
 
-    def set_linear_angular_speed(self, speed: float, ang_speed: float) -> None:
+    def set_linear_angular_speed(self, speed, ang_speed):
         left_wheel_speed = speed - ang_speed * 0.5 * self.axis_length
         right_wheel_speed = speed + ang_speed * 0.5 * self.axis_length
         left_motor_speed = self.left_wheel_motor_speed(left_wheel_speed)
@@ -422,5 +393,5 @@ class BaseDriver:
             right_motor_speed = int(self.max_aseba_speed / max_motor_speed * right_motor_speed)
         self.set_aseba_speed([left_motor_speed, right_motor_speed])
 
-    def on_cmd_vel(self, data: Twist) -> None:
+    def on_cmd_vel(self, data):
         self.set_linear_angular_speed(data.linear.x, data.angular.z)

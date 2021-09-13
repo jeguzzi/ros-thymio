@@ -1,5 +1,5 @@
+# type: ignore
 import array
-from typing import Callable, List, Optional
 
 import rospy
 from asebaros_msgs.msg import Event as AsebaEvent
@@ -38,7 +38,7 @@ class ThymioDriver(BaseDriver):
                     'center_right': -0.32, 'right': -0.64}
     laser_shift = 0.08
 
-    def init(self) -> None:
+    def init(self):
 
         self.buttons = Joy()
         self.buttons_pub = rospy.Publisher(self._ros('buttons'), Joy, queue_size=1)
@@ -46,11 +46,12 @@ class ThymioDriver(BaseDriver):
 
         for button in BUTTONS:
             rospy.Subscriber(
-                self._aseba(f'button_{button}'), AsebaEvent,
-                self.on_aseba_button_event(self._ros(f'buttons/{button}')))
+                self._aseba('button_{0}'.format(button)), AsebaEvent,
+                self.on_aseba_button_event(self._ros('buttons/{0}'.format(button))))
 
         self.ground_sensors = [{
-            'publisher': rospy.Publisher(self._ros(f'ground/{name}'), Range, queue_size=1),
+            'publisher': rospy.Publisher(
+                self._ros('ground/{0}'.format(name)), Range, queue_size=1),
             'msg': Range(
                 header=Header(
                     frame_id=self._ros('ground_{name}_link'.format(name=name))),
@@ -104,8 +105,8 @@ class ThymioDriver(BaseDriver):
 
         # actuators
         for name in BODY_LEDS:
-            rospy.Subscriber(self._ros(f'led/body/{name}'), ColorRGBA,
-                             self.on_body_led(self._aseba(f'set_led_{name}')))
+            rospy.Subscriber(self._ros('led/body/{0}'.format(name)), ColorRGBA,
+                             self.on_body_led(self._aseba('set_led_{0}'.format(name))))
 
         rospy.Subscriber(self._ros('led'), Led, self.on_led, 6)
         self.aseba_led_publisher = rospy.Publisher(self._aseba('set_led'), AsebaEvent, queue_size=6)
@@ -135,13 +136,13 @@ class ThymioDriver(BaseDriver):
             self._aseba('play_system_sound'), AsebaEvent, queue_size=1)
 
         rospy.Subscriber(self._ros('alarm'), Bool, self.on_alarm)
-        self.alarm_timer: Optional[rospy.Timer] = None
+        self.alarm_timer = None
 
         rospy.Subscriber(self._ros('shutdown'), Empty, self.on_shutdown_msg)
         self.aseba_shutdown_publisher = rospy.Publisher(
             self._aseba('shutdown'), AsebaEvent, queue_size=1)
 
-    def on_aseba_comm_rx_event(self, msg: AsebaEvent) -> None:
+    def on_aseba_comm_rx_event(self, msg):
         rmsg = Comm()
         rmsg.value = msg.data[0]
         # REVIEW: Why must I cast to a list???
@@ -149,23 +150,23 @@ class ThymioDriver(BaseDriver):
         rmsg.intensities = list(msg.data[8:])
         self.comm_rx_publisher.publish(rmsg)
 
-    def on_comm_enable(self, msg: Bool) -> None:
+    def on_comm_enable(self, msg):
         msg = AsebaEvent(stamp=rospy.Time.now(), source=0, data=[msg.data])
         self.aseba_enable_comm_publisher.publish(msg)
 
-    def on_comm_tx_payload(self, msg: Int16) -> None:
+    def on_comm_tx_payload(self, msg):
         msg = AsebaEvent(stamp=rospy.Time.now(), source=0, data=[msg.data])
         self.aseba_set_comm_tx_payload_publisher.publish(msg)
 
-    def on_shutdown_msg(self, msg: Empty) -> None:
+    def on_shutdown_msg(self, msg):
         self.aseba_shutdown_publisher.publish(
             AsebaEvent(stamp=rospy.Time.now(), source=0, data=[]))
 
-    def play_system_sound(self, sound: int) -> None:
+    def play_system_sound(self, sound):
         self.aseba_play_system_sound_publisher.publish(
             AsebaEvent(stamp=rospy.Time.now(), source=0, data=[sound]))
 
-    def on_alarm(self, msg: Bool) -> None:
+    def on_alarm(self, msg):
         if msg.data and not self.alarm_timer:
             self.alarm_timer = rospy.Timer(
                 rospy.Duration(3.0), lambda evt: self.play_system_sound(2))
@@ -173,47 +174,47 @@ class ThymioDriver(BaseDriver):
             self.alarm_timer.shutdown()
             self.alarm_timer = None
 
-    def on_sound_play(self, msg: Sound) -> None:
+    def on_sound_play(self, msg):
         freq = max(1, int(msg.frequency))
         duration = max(1, int(msg.duration * 60))
         self.aseba_play_sound_publisher.publish(
             AsebaEvent(stamp=rospy.Time.now(), source=0, data=[freq, duration]))
 
-    def on_system_sound_play(self, msg: SystemSound) -> None:
+    def on_system_sound_play(self, msg):
         self.play_system_sound(msg.sound)
 
-    def set_led_gesture(self, gesture: int, leds: int, wave: int, period: float,
-                        length: int, mirror: int, mask: List[int]) -> None:
+    def set_led_gesture(self, gesture, leds, wave, period,
+                        length, mirror, mask):
         period = max(-32678, min(32678, int(period * 1000)))
         data = [gesture, leds, wave, period, length, mirror] + mask[:8]
         data += [1] * (14 - len(data))
         self.aseba_led_gesture_publisher.publish(
             AsebaEvent(stamp=rospy.Time.now(), source=0, data=data))
 
-    def on_led_gesture(self, msg: LedGesture) -> None:
+    def on_led_gesture(self, msg):
         self.set_led_gesture(msg.gesture, msg.leds, msg.wave,
                              msg.period, msg.length, msg.mirror, msg.mask)
 
-    def on_led_gesture_off(self, msg: Empty) -> None:
+    def on_led_gesture_off(self, msg):
         self.set_led_gesture(LedGesture.OFF, 0, 0, 0, 0, 0, [])
 
-    def on_led_gesture_circle(self, msg: Float32) -> None:
+    def on_led_gesture_circle(self, msg):
         self.set_led_gesture(LedGesture.WAVE, LedGesture.CIRCLE,
                              LedGesture.HARMONIC, msg.data, 8, 0, [])
 
-    def on_led_gesture_blink(self, msg: Float32) -> None:
+    def on_led_gesture_blink(self, msg):
         self.set_led_gesture(LedGesture.WAVE, LedGesture.CIRCLE,
                              LedGesture.HARMONIC, msg.data, 1, 0, [])
 
-    def on_led_gesture_kit(self, msg: Float32) -> None:
+    def on_led_gesture_kit(self, msg):
         self.set_led_gesture(LedGesture.WAVE, LedGesture.PROXIMITY,
                              LedGesture.HARMONIC, msg.data, 12, 11, [1, 1, 1, 1, 1, 1, 0, 0])
 
-    def on_led_gesture_alive(self, msg: Empty) -> None:
+    def on_led_gesture_alive(self, msg):
         self.set_led_gesture(LedGesture.WAVE, LedGesture.CIRCLE,
                              LedGesture.RECT, 3.0, 24, 0, [])
 
-    def on_led_off(self, msg: Empty) -> None:
+    def on_led_off(self, msg):
         for i in LED_NUMBER.keys():
             self.aseba_led_publisher.publish(
                 AsebaEvent(stamp=rospy.Time.now(), source=0, data=[i] + 8 * [0]))
@@ -222,7 +223,7 @@ class ThymioDriver(BaseDriver):
             # messages
             rospy.sleep(0.005)
 
-    def on_led(self, msg: Led) -> None:
+    def on_led(self, msg):
         i = msg.id
         num = LED_NUMBER.get(i, 0)
         if num <= len(msg.values):
@@ -231,10 +232,10 @@ class ThymioDriver(BaseDriver):
             self.aseba_led_publisher.publish(
                 AsebaEvent(stamp=rospy.Time.now(), source=0, data=data))
 
-    def on_body_led(self, topic: str) -> Callable[[ColorRGBA], None]:
+    def on_body_led(self, topic):
         publisher = rospy.Publisher(topic, AsebaEvent, queue_size=1)
 
-        def callback(msg: ColorRGBA) -> None:
+        def callback(msg):
             r = int(msg.r * 32)
             g = int(msg.g * 32)
             b = int(msg.b * 32)
@@ -242,10 +243,10 @@ class ThymioDriver(BaseDriver):
             publisher.publish(aseba_msg)
         return callback
 
-    def on_aseba_remote_event(self, msg: AsebaEvent) -> None:
+    def on_aseba_remote_event(self, msg):
         self.remote_publisher.publish(Int8(data=msg.data[1]))
 
-    def on_sound_threshold(self, msg: AsebaEvent) -> None:
+    def on_sound_threshold(self, msg):
         value = msg * 255
         if value < 0:
             value = 1
@@ -254,25 +255,25 @@ class ThymioDriver(BaseDriver):
         self.sound_threshold_publisher.publish(
             AsebaEvent(stamp=rospy.Time.now(), source=0, data=[value]))
 
-    def on_aseba_sound_event(self, msg: AsebaEvent) -> None:
+    def on_aseba_sound_event(self, msg):
         self.sound_publisher.publish(Float32(data=msg.data[0] / 255.0))
 
-    def on_aseba_tap_event(self, msg: AsebaEvent) -> None:
+    def on_aseba_tap_event(self, msg):
         self.tap_publisher.publish(Empty())
 
-    def on_aseba_temperature_event(self, msg: AsebaEvent) -> None:
+    def on_aseba_temperature_event(self, msg):
         self.temperature.temperature = msg.data[0] / 10.0
         self.temperature_publisher.publish(self.temperature)
 
     # TODO check how it's implemented in the firmware.
-    def on_aseba_accelerometer_event(self, msg: AsebaEvent) -> None:
+    def on_aseba_accelerometer_event(self, msg):
         self.imu.linear_acceleration.x = msg.data[1] / 23.0 * 9.81
         self.imu.linear_acceleration.y = -msg.data[0] / 23.0 * 9.81
         self.imu.linear_acceleration.z = msg.data[2] / 23.0 * 9.81
         self.imu.header.stamp = rospy.Time.now()
         self.imu_publisher.publish(self.imu)
 
-    def on_aseba_ground_event(self, msg: AsebaEvent) -> None:
+    def on_aseba_ground_event(self, msg):
         data = msg.data
         # ir_threshold = self.get_parameter("ground.threshold").value
         ir_threshold = self.ground_threshold
@@ -286,15 +287,15 @@ class ThymioDriver(BaseDriver):
             sensor['msg'].header.stamp = rospy.Time.now()
             sensor['publisher'].publish(sensor['msg'])
 
-    def on_aseba_button_event(self, topic: str) -> Callable[[AsebaEvent], None]:
+    def on_aseba_button_event(self, topic):
         publisher = rospy.Publisher(topic, Bool, queue_size=1)
 
-        def callback(msg: AsebaEvent) -> None:
+        def callback(msg):
             bool_msg = Bool(data=bool(msg.data[0]))
             publisher.publish(bool_msg)
         return callback
 
-    def on_aseba_buttons_event(self, data: AsebaEvent) -> None:
+    def on_aseba_buttons_event(self, data):
         self.buttons.header.stamp = rospy.Time.now()
         # data.data is array('h'), we need array('i')
         self.buttons.buttons = array.array('i', data.data)
