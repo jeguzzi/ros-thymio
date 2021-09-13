@@ -4,11 +4,15 @@ import os
 from dataclasses import dataclass
 from datetime import datetime as dt
 from typing import Any, Dict, List, NamedTuple, Optional
+try:
+    from typing import Literal
+except ImportError:
+    from typing_extensions import Literal  # type: ignore
+
 
 import numpy as np
 import yaml
 from scipy.optimize import curve_fit
-from typing_extensions import Literal
 
 import rclpy.node
 from asebaros_msgs.msg import AsebaEvent
@@ -27,8 +31,7 @@ class CalibrationResult(NamedTuple):
     params: List[float]
     kind: str
 
-    @property
-    def dict(self) -> Dict[str, Any]:
+    def as_dict(self) -> Dict[str, Any]:
         return {'kind': self.kind, 'q': self.params}
 
 
@@ -146,7 +149,7 @@ class Calibration(rclpy.node.Node):  # type: ignore
         name = f'{self.motor}.yaml'
         path = os.path.join(self.sample_folder, name)
         with open(path, 'w') as f:
-            yaml.dump(result.dict, f)
+            yaml.dump(result.as_dict(), f)
         # l_path = os.path.join(os.path.basename(self.sample_folder), name)
         # t_path = os.path.join(self.sample_folder, '..', name)
         # self.get_logger().info(f'Create symlink {t_path} -> {path}')
