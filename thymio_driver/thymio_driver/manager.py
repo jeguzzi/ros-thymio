@@ -18,12 +18,13 @@ class Manager(object):
     def on_aseba_node_list(self, msg):
         for node in msg.nodes:
             if node.name in self._drivers and node.id not in self.ros_nodes:
-                rospy.loginfo(f"Connected to new robot {node.id} of kind {node.name} and namespace {node.name_space}")
+                rospy.loginfo("Connected to new robot %d of kind %s and namespace %s",
+                              node.id, node.name, node.name_space)
                 self.add(uid=node.id, name=node.name_space, kind=node.name)
         uids = [node.id for node in msg.nodes]
         for uid in self.ros_nodes:
             if uid not in uids:
-                rospy.logwarn(f"Lost connection with robot {id}")
+                rospy.logwarn("Lost connection with robot %s", id)
                 self.remove(uid)
 
     def add(self, uid: int, name, kind):

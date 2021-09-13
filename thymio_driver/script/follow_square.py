@@ -21,14 +21,14 @@ class FollowSquare(object):
         self.pose = (0.0, 0.0, 0.0)
         self.sleep(1)
         rospy.loginfo(
-            f'Start square with speed {speed:.3f} m/s and side {side_length:.3f} m')
+            'Start square with speed {0:.3f} m/s and side {1:.3f} m'.format(speed, side_length))
         for _ in range(4):
-            rospy.loginfo(f'Side from {self.pose}')
+            rospy.loginfo('Side from %s', self.pose)
             self.advance(side_length, speed=speed)
-            rospy.loginfo(f'Turn from {self.pose}')
+            rospy.loginfo('Turn from %s', self.pose)
             self.turn(math.pi / 2, angular_speed=(speed / axis_length))
             self.sleep(1)
-        rospy.loginfo(f'Done at {self.pose}')
+        rospy.loginfo('Done at %s', self.pose)
         self.sleep(1)
 
     def sleep(self, dt):

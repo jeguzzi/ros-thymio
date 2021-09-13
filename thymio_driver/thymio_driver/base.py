@@ -23,7 +23,7 @@ class MotorSpeedConversion(object):
 
     def __init__(self, calibration):
         if calibration['kind'] != 'quadratic':
-            raise ValueError(f"Unknown calibration {calibration['kind']}")
+            raise ValueError("Unknown calibration {0}".format(calibration['kind']))
         self.parameters = calibration['parameters']
         self.deadband = calibration['deadband']
 
@@ -51,7 +51,7 @@ class ProximityConversion(object):
 
     def __init__(self, calibration):
         if calibration['kind'] != 'power':
-            raise ValueError(f"Unknown calibration {calibration['kind']}")
+            raise ValueError("Unknown calibration {0}".format(calibration['kind']))
         self.parameters = calibration['parameters']
         self.range_max = calibration['range_max']
         self.range_min = calibration['range_min']
@@ -113,7 +113,7 @@ class BaseDriver(object):
         # REVIEW: not implemented yet in ROS2
         # self.on_shutdown(self.shutdown)
         rospy.Service(self._ros('is_ready'), std_srvs.srv.Empty, self.ready)
-        rospy.loginfo(f"{self.kind} is ready")
+        rospy.loginfo("%s is ready", self.kind)
 
     # TODO(ROS1): Dynamic reconfig callback
     # def param_callback(self, parameters: List[rclpy.parameter.Parameter]
@@ -317,7 +317,7 @@ class BaseDriver(object):
             return
         dt = (now - self.last_odom_stamp).to_sec()
         if dt <= 0:
-            rospy.logerror(f"Negative time difference {dt} s between odometry messages")
+            rospy.logerror("Negative time difference {%.3f} s between odometry messages", dt)
             return
         self.last_odom_stamp = now
         stamp = data.stamp
