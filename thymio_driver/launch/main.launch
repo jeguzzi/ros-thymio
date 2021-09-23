@@ -4,7 +4,9 @@
   <arg name="odom_max_rate" default="-1"/>
   <arg name="single" default="true"/>
   <arg name="name" default=""/>
-  <arg name="simulation" default="false"/>
+  <arg name="simulation" default="False"/>
+  <arg name="simulation_has_reduced_api" default="True"/>
+  <arg name="reduced_api" value="$(eval arg('simulation') and arg('simulation_has_reduced_api'))"/>
   <arg name="driver" value="thymio_driver_node.py" if="$(arg single)"/>
   <arg name="driver" value="multi_thymio_driver_node.py" unless="$(arg single)"/>
   <arg name="ROS_HOME" value="$(env HOME)/.ros"/>
@@ -25,6 +27,7 @@
   <group ns="$(eval arg('name') or '/')">
     <include file="$(find thymio_driver)/launch/asebaros.launch">
       <arg name="single" value="$(arg single)"/>
+      <arg name="reduced_api" value="$(arg reduced_api)"/>
       <arg name="device" value="$(arg device)"/>
       <arg name="port" value="$(arg port)"/>
       <arg name="emit_motor" value="$(arg emit_motor)"/>

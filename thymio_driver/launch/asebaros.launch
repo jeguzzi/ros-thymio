@@ -13,8 +13,11 @@
   <arg name="acc_period" default="2"/>
   <arg name="buttons_period" default="5"/>
   <arg name="single" default="true"/>
-  <arg name="script" value="thymio_ros.aesl" if="$(arg single)"/>
-  <arg name="script" value="multi_thymio_ros.aesl" unless="$(arg single)"/>
+  <arg name="reduced_api" default="false"/>
+  <arg name="api_suffix" value="_sim" if="$(arg reduced_api)"/>
+  <arg name="api_suffix" value="" unless="$(arg reduced_api)"/>
+  <arg name="script" value="thymio_ros$(arg api_suffix).aesl" if="$(arg single)"/>
+  <arg name="script" value="multi_thymio_ros$(arg api_suffix).aesl" unless="$(arg single)"/>
   <arg name="include_id_in_events" value="false" if="$(arg single)"/>
   <arg name="include_id_in_events" value="true" unless="$(arg single)"/>
   <arg name="maximal_number_of_nodes" value="1" if="$(arg single)"/>
