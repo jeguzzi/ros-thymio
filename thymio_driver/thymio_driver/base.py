@@ -170,10 +170,13 @@ class BaseDriver(rclpy.node.Node):  # type: ignore
         self.calibration = self.default_calibration(simulated)
         if calibration_file:
             self.get_logger().info(f"calibration_file {calibration_file}")
-            with open(calibration_file, 'r') as f:
-                calibration = yaml.safe_load(f).get(self.uid, {})
-                self.get_logger().info(f"calibration from file {calibration}")
-                self.calibration.update(calibration)
+            try:
+                with open(calibration_file, 'r') as f:
+                    calibration = yaml.safe_load(f).get(self.uid, {})
+                    self.get_logger().info(f"calibration from file {calibration}")
+                    self.calibration.update(calibration)
+            except FileNotFoundError:
+                pass
         for group, v in self.calibration.items():
             for name, cal in cast(Dict[str, Dict], v).items():
                 for param, value in cal.items():
