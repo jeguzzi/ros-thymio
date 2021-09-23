@@ -31,13 +31,13 @@
     <param name="port" value="$(arg port)"/>
     <param name="shutdown_on_unconnect" value="false"/>
     <param name="reload_script_on_reconnect" value="false"/>
-    <param name="include_id_in_events" value="$(arg include_id_in_events)"/>
-    <param name="maximal_number_of_nodes" value="$(arg maximal_number_of_nodes)"/>
     <rosparam param="nodes" subst_value="true">
       thymio:
         type: thymio-II
         prefix: $(arg prefix)
         accept: true
+        maximal_number: $(arg maximal_number_of_nodes)
+        include_id_in_events: $(arg include_id_in_events)
       other:
         accept: false
     </rosparam>
