@@ -2,12 +2,13 @@
 
   <arg name="axis_length" default="0.0935"/>
   <arg name="odom_max_rate" default="-1"/>
-  <arg name="motor_calibration" default="$(find-pkg-share thymio_driver)/calibration/motor.yaml"/>
   <arg name="single" default="true"/>
-  <arg name="tf_prefix" default=""/>
+  <arg name="name" default=""/>
+  <arg name="simulation" default="false"/>
   <let name="driver" value="thymio_driver" if="$(var single)"/>
   <let name="driver" value="multi_thymio_driver" unless="$(var single)"/>
-
+  <let name="ROS_HOME" value="$(env ROS_HOME $(env HOME)/.ros)"/>
+  <arg name="calibration_file" default="$(var ROS_HOME)/thymio_calibration.yaml"/>
   <arg name="device" default=""/>
   <arg name="port" default="44444"/>
   <arg name="emit_motor" default="1"/>
@@ -21,6 +22,7 @@
   <arg name="acc_period" default="2"/>
   <arg name="buttons_period" default="5"/>
 
+  <push-ros-namespace namespace="$(var name)" if="$(var single)"/>
 
   <include file="$(find-pkg-share thymio_driver)/launch/asebaros.launch">
     <arg name="single" value="$(var single)"/>
@@ -38,12 +40,18 @@
     <arg name="buttons_period" value="$(var buttons_period)"/>
   </include>
 
-  <node name="driver" pkg="thymio_driver" exec="$(var driver)" output="screen" args="--ros-args --log-level info">
+  <node pkg="thymio_driver" exec="$(var driver)" output="screen" args="--ros-args --log-level info">
     <param name="axis_length" value="$(var axis_length)"/>
     <param name="odom_max_rate" value="$(var odom_max_rate)"/>
-    <param from="$(var motor_calibration)"/>
-    <param name="tf_prefix" value="$(var tf_prefix)"/>
+    <param name="calibration_file" value="$(var calibration_file)"/>
+    <param name="tf_prefix" value="$(var name)"/>
     <param name="launch_model" value="thymio_description model.launch.py"/>
+    <param name="simulation" value="$(var simulation)"/>
   </node>
+
+  <include file="$(find-pkg-share thymio_description)/launch/model.launch.py" if="$(var single)">
+    <arg name="name" value="$(var name)"/>
+    <arg name="namespace" value=""/>
+  </include>
 
 </launch>

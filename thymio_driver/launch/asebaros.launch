@@ -29,13 +29,14 @@
     <param name="port" value="$(var port)"/>
     <param name="shutdown_on_unconnect" value="false"/>
     <param name="reload_script_on_reconnect" value="false"/>
-    <param name="include_id_in_events" value="$(var include_id_in_events)"/>
-    <param name="maximal_number_of_nodes" value="$(var maximal_number_of_nodes)"/>
     <param name="nodes">
       <param name="thymio">
-        <param name="type" value="thymio-II"/>
+        <param name="name" value="thymio-II"/>
         <param name="prefix" value="$(var prefix)"/>
+        <param name="namespace" value=""/>
         <param name="accept" value="true"/>
+        <param name="maximal_number" value="$(var maximal_number_of_nodes)"/>
+        <param name="include_id_in_events" value="$(var include_id_in_events)"/>
       </param>
       <param name="other">
         <param name="accept" value="false"/>

@@ -1,6 +1,8 @@
 import time
+import yaml
+
 from math import copysign, cos, sin, sqrt
-from typing import Dict, List, Optional, Tuple, TypeVar
+from typing import Any, Dict, List, Optional, Tuple, TypeVar, TYPE_CHECKING, cast
 
 try:
     from typing import TypedDict
@@ -14,6 +16,7 @@ import rclpy.time
 import std_srvs.srv
 # from asebaros_msgs.msg import AsebaEvent
 from asebaros_msgs.msg import Event as AsebaEvent
+# from asebaros_msgs.msg import Node as AsebaNode
 from asebaros_msgs.srv import GetNodeList, LoadScript
 from geometry_msgs.msg import (Quaternion, Transform, TransformStamped, Twist,
                                Vector3)
@@ -22,6 +25,9 @@ from rcl_interfaces.msg import SetParametersResult
 from sensor_msgs.msg import JointState, LaserScan, Range
 from std_msgs.msg import Header
 from tf2_ros.transform_broadcaster import TransformBroadcaster
+
+if TYPE_CHECKING:
+    from .manager import Manager
 
 T = TypeVar('T')
 
@@ -36,6 +42,9 @@ MotorCalibration = TypedDict('MotorCalibration',
 ProximityCalibration = TypedDict('ProximityCalibration',
                                  {'parameters': List[float], 'kind': str,
                                   'range_max': float, 'range_min': float, 'fov': float})
+Calibration = TypedDict(
+    "Calibration",
+    {'motor': Dict[str, MotorCalibration], 'proximity': Dict[str, ProximityCalibration]})
 
 
 class MotorSpeedConversion:
@@ -122,19 +131,29 @@ class BaseDriver(rclpy.node.Node):  # type: ignore
     proximity_calibration: ProximityCalibration
     laser_angles: Dict[str, float]
     laser_shift: float
+    uid: int
+    param_owner: rclpy.node.Node
+    calibration: Calibration
 
-    def __init__(self, namespace: str = '', standalone: bool = True) -> None:
-        super(BaseDriver, self).__init__('driver', namespace=namespace)
-        self.namespace = namespace
-        if standalone:
-            # TODO(Jerome): better semantic
-            if not self.wait_for_aseba_node():
+    def __init__(self, namespace: str = '', manager: Optional['Manager'] = None, uid: int = -1) -> None:
+        super().__init__("thymio_driver", namespace=namespace)
+        if manager:
+            self.param_owner = manager
+        else:
+            self.param_owner = self
+        self.aseba_node = None
+        self.uid = uid
+        if not manager:
+            self.uid, running = self.wait_for_aseba_node()
+            if not running:
                 self.load_script()
         self.clock = self.get_clock()
         if namespace:
             self.tf_prefix = namespace
         else:
             self.tf_prefix = self.declare_parameter('tf_prefix', '').value
+
+        self.init_calibration()
         self.init_odometry()
         self.init_wheels()
         self.init_proximity()
@@ -143,7 +162,31 @@ class BaseDriver(rclpy.node.Node):  # type: ignore
         # REVIEW: not implemented yet in ROS2
         # self.on_shutdown(self.shutdown)
         self.create_service(std_srvs.srv.Empty, self._ros('is_ready'), self.ready)
-        self.get_logger().info(f"{self.kind} is ready")
+        self.get_logger().info(f"{self.kind} is ready at namespace {self.get_namespace()}")
+
+    def init_calibration(self) -> None:
+        calibration_file = self.get_or_declare_parameter('calibration_file', '').value
+        simulated = self.get_or_declare_parameter('simulation', False).value
+        self.calibration = self.default_calibration(simulated)
+        if calibration_file:
+            self.get_logger().info(f"calibration_file {calibration_file}")
+            with open(calibration_file, 'r') as f:
+                calibration = yaml.safe_load(f).get(self.uid, {})
+                self.get_logger().info(f"calibration from file {calibration}")
+                self.calibration.update(calibration)
+        for group, v in self.calibration.items():
+            for name, cal in cast(Dict[str, Dict], v).items():
+                for param, value in cal.items():
+                    self.declare_parameter(f'{group}.{name}.{param}', value)
+        # self.get_logger().info(f"Loaded calibration {self.calibration}")
+
+    def default_calibration(self, simulated: bool = False) -> Calibration:
+        return {'motor': {}, 'proximity': {}}
+
+    def get_or_declare_parameter(self, name: str, value: Any) -> rclpy.parameter.Parameter:
+        if self.param_owner.has_parameter(name):
+            return self.param_owner.get_parameter(name)
+        return self.param_owner.declare_parameter(name, value)
 
     def param_callback(self, parameters: List[rclpy.parameter.Parameter]
                        ) -> SetParametersResult:
@@ -173,7 +216,7 @@ class BaseDriver(rclpy.node.Node):  # type: ignore
         # default_script = os.path.join(get_package_share_directory(
         #     'thymio_driver'), 'aseba', 'thymio_ros.aesl')
         default_script = ''
-        script_path = self.declare_parameter('script', default_script).value
+        script_path = self.get_or_declare_parameter('script', default_script).value
         if not script_path:
             self.get_logger().warn('Script not provided!')
             return
@@ -186,7 +229,9 @@ class BaseDriver(rclpy.node.Node):  # type: ignore
         resp = load_script_client.call_async(req)
         rclpy.spin_until_future_complete(self, resp)
 
-    def wait_for_aseba_node(self) -> bool:
+    def wait_for_aseba_node(self) -> Tuple[int, bool]:
+        self.get_logger().info(
+            f"Waiting for an Aseba node with name {self.kind}")
         get_aseba_nodes = self.create_client(GetNodeList, 'aseba/get_nodes')
         while not get_aseba_nodes.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('get_aseba_nodes service not available, waiting again...')
@@ -194,11 +239,13 @@ class BaseDriver(rclpy.node.Node):  # type: ignore
             req = GetNodeList.Request()
             resp = get_aseba_nodes.call_async(req)
             rclpy.spin_until_future_complete(self, resp)
-            nodes = [node for node in resp.result().nodes if node.name == self.kind]
+            nodes = [node for node in resp.result().nodes
+                     if node.name == self.kind]
             if nodes:
                 self.get_logger().info(f'Found Thymio {nodes[0]}')
-                return nodes[0].running
-            self.get_logger().info(f'Waiting for a node of kind {self.kind} ...')
+                return (nodes[0].id, nodes[0].running)
+            self.get_logger().info(
+                f"Waiting for an Aseba node with name {self.kind}")
             time.sleep(1)
 
     def _aseba(self, topic: str) -> str:
@@ -220,10 +267,10 @@ class BaseDriver(rclpy.node.Node):  # type: ignore
         self.theta = 0.0
         self.x = 0.0
         self.y = 0.0
-        self.odom_frame = self._frame(self.declare_parameter('odom_frame', 'odom').value)
-        self.robot_frame = self._frame(self.declare_parameter('robot_frame', 'base_link').value)
+        self.odom_frame = self._frame(self.get_or_declare_parameter('odom_frame', 'odom').value)
+        self.robot_frame = self._frame(self.get_or_declare_parameter('robot_frame', 'base_link').value)
         self.last_odom_stamp: Optional[rclpy.time.Time] = None
-        odom_rate = self.declare_parameter('odom_max_rate', -1).value
+        odom_rate = self.get_or_declare_parameter('odom_max_rate', -1).value
         if odom_rate == 0:
             self.odom_min_period = -1
         else:
@@ -236,19 +283,13 @@ class BaseDriver(rclpy.node.Node):  # type: ignore
         self.tf_broadcaster = TransformBroadcaster(self)
         self.odom_pub = self.create_publisher(Odometry, self._ros('odom'), 1)
 
-    def load_calibration(self, group: str, name: str, default: T) -> T:
-        return {key: self.declare_parameter(f'{group}.{name}.{key}', value).value
-                for key, value in default.items()}  # type: ignore
-
     def init_wheels(self) -> None:
         self.left_wheel_angle = 0.0
         self.right_wheel_angle = 0.0
         self.left_steps = 0
         self.right_steps = 0
-        self.axis_length = self.declare_parameter('axis_length', self.axis_length).value
-        motor_calibration = {
-            motor: self.load_calibration('motor_calibration', motor, self.motor_calibration)
-            for motor in ('left', 'right')}
+        self.axis_length = self.get_or_declare_parameter('axis_length', self.axis_length).value
+        motor_calibration = self.calibration['motor']
         self.motor_speed_conversion = {motor: MotorSpeedConversion(motor_calibration[motor])
                                        for motor in ('left', 'right')}
         self.left_wheel_motor_speed = self.motor_speed_conversion['left'].si_to_aseba
@@ -256,8 +297,8 @@ class BaseDriver(rclpy.node.Node):  # type: ignore
         self.right_wheel_motor_speed = self.motor_speed_conversion['right'].si_to_aseba
         self.get_logger().info(f'Init right wheel with calibration {motor_calibration["right"]}')
         self.update_odom_convariance()
-        left_wheel_joint = self.declare_parameter('left_wheel_joint', 'left_wheel_joint').value
-        right_wheel_joint = self.declare_parameter('right_wheel_joint', 'right_wheel_joint').value
+        left_wheel_joint = self.get_or_declare_parameter('left_wheel_joint', 'left_wheel_joint').value
+        right_wheel_joint = self.get_or_declare_parameter('right_wheel_joint', 'right_wheel_joint').value
         self.wheel_state_msg = JointState()
         self.wheel_state_msg.name = [self._frame(left_wheel_joint), self._frame(right_wheel_joint)]
         self.wheel_state_pub = self.create_publisher(JointState, self._ros('joint_states'), 1)
@@ -269,12 +310,10 @@ class BaseDriver(rclpy.node.Node):  # type: ignore
     def init_proximity(self) -> None:
 
         self.proximity_sensors: List[ProximitySensor] = []
-
+        proximity_calibration = self.calibration['proximity']
         for name in self.proximity_names:
             pub = self.create_publisher(Range, self._ros(f'proximity/{name}'), 1)
-            converter = ProximityConversion(
-                self.load_calibration('proximity_calibration', name,
-                                      default=self.proximity_calibration))
+            converter = ProximityConversion(proximity_calibration[name])
             msg = Range(
                 header=Header(frame_id=self._frame(f'proximity_{name}_link')),
                 radiation_type=Range.INFRARED,

@@ -21,8 +21,10 @@ class Manager(rclpy.node.Node):  # type: ignore
         self.model_process: Dict[int, subprocess.Popen[bytes]] = {}
 
     def on_aseba_node_list(self, msg: AsebaNodeList) -> None:
+        namespaces = [name for name, _ in self.ros_nodes.values()]
         for node in msg.nodes:
-            if node.name in self._drivers and node.id not in self.ros_nodes:
+            if(node.name in self._drivers and node.id not in self.ros_nodes and
+               node.name_space not in namespaces):
                 self.get_logger().warn(f"Connected to new robot {node.id} of kind {node.name}")
                 self.add(uid=node.id, name=node.name_space, kind=node.name)
         uids = [node.id for node in msg.nodes]
@@ -32,7 +34,8 @@ class Manager(rclpy.node.Node):  # type: ignore
                 self.remove(uid)
 
     def add(self, uid: int, name: str, kind: str) -> None:
-        _, node = self.ros_nodes[uid] = (name, self._drivers[kind](namespace=name, standalone=False))
+        _, node = self.ros_nodes[uid] = (
+            name, self._drivers[kind](namespace=name, manager=self, uid=uid))
         self.executor.add_node(node)
         if self.launch_model:
             self.model_process[uid] = subprocess.Popen(
