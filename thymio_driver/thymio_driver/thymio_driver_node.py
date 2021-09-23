@@ -85,7 +85,7 @@ class ThymioDriver(BaseDriver):
             'publisher': self.create_publisher(Range, self._ros(f'ground/{name}'), 1),
             'msg': Range(
                 header=Header(
-                    frame_id=self._ros('ground_{name}_link'.format(name=name))),
+                    frame_id=self._frame('ground_{name}_link'.format(name=name))),
                 radiation_type=Range.INFRARED, field_of_view=GROUND_SENSOR_FOV,
                 min_range=(GROUND_MIN_RANGE / 1000.0), max_range=(GROUND_MAX_RANGE / 1000.0))
         } for name in GROUND_NAMES]
