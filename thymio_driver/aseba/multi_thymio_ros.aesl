@@ -250,21 +250,11 @@ call math.fill(prox.comm.rx._intensities, 0)
 emit comm comm
 
 
-# onevent set_comm
-# call prox.comm.enable(event.args[0])
-# prox.comm.tx=event.args[1]
-#
-# onevent prox.comm
-# emit comm prox.comm.rx
-
-
 onevent play_system_sound
 call sound.system(event.args[0])
 
 onevent play_sound
 call sound.freq(event.args[0],event.args[1])
-
-
 
 onevent set_led_top
 if event.args[0] != _id then

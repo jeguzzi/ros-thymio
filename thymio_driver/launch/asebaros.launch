@@ -13,8 +13,11 @@
   <arg name="acc_period" default="2"/>
   <arg name="buttons_period" default="5"/>
   <arg name="single" default="true"/>
-  <let name="script" value="thymio_ros.aesl" if="$(var single)"/>
-  <let name="script" value="multi_thymio_ros.aesl" unless="$(var single)"/>
+  <arg name="reduced_api" default="false"/>
+  <let name="api_suffix" value="_sim" if="$(var reduced_api)"/>
+  <let name="api_suffix" value="" unless="$(var reduced_api)"/>
+  <let name="script" value="thymio_ros$(var api_suffix).aesl" if="$(var single)"/>
+  <let name="script" value="multi_thymio_ros$(var api_suffix).aesl" unless="$(var single)"/>
   <let name="include_id_in_events" value="false" if="$(var single)"/>
   <let name="include_id_in_events" value="true" unless="$(var single)"/>
   <let name="maximal_number_of_nodes" value="1" if="$(var single)"/>
