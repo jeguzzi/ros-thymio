@@ -1,0 +1,56 @@
+<launch>
+
+  <arg name="axis_length" default="0.0935"/>
+  <arg name="odom_max_rate" default="-1"/>
+  <arg name="single" default="true"/>
+  <arg name="name" default=""/>
+  <arg name="simulation" default="false"/>
+  <arg name="driver" value="thymio_driver_node.py" if="$(arg single)"/>
+  <arg name="driver" value="multi_thymio_driver_node.py" unless="$(arg single)"/>
+  <arg name="ROS_HOME" value="$(env HOME)/.ros"/>
+  <arg name="calibration_file" default="$(arg ROS_HOME)/thymio_calibration.yaml"/>
+  <arg name="device" default=""/>
+  <arg name="port" default="44444"/>
+  <arg name="emit_motor" default="1"/>
+  <arg name="emit_buttons" default="0"/>
+  <arg name="emit_acc" default="1"/>
+  <arg name="emit_ground_raw" default="0"/>
+  <arg name="emit_proximity" default="1"/>
+  <arg name="enable_prox_comm" default="1"/>
+  <arg name="motor_deadband" default="10"/>
+  <arg name="motor_period" default="5"/>
+  <arg name="acc_period" default="2"/>
+  <arg name="buttons_period" default="5"/>
+
+  <group ns="$(eval arg('name') or '/')">
+    <include file="$(find thymio_driver)/launch/asebaros.launch">
+      <arg name="single" value="$(arg single)"/>
+      <arg name="device" value="$(arg device)"/>
+      <arg name="port" value="$(arg port)"/>
+      <arg name="emit_motor" value="$(arg emit_motor)"/>
+      <arg name="emit_buttons" value="$(arg emit_buttons)"/>
+      <arg name="emit_acc" value="$(arg emit_acc)"/>
+      <arg name="emit_ground_raw" value="$(arg emit_ground_raw)"/>
+      <arg name="emit_proximity" value="$(arg emit_proximity)"/>
+      <arg name="enable_prox_comm" value="$(arg enable_prox_comm)"/>
+      <arg name="motor_deadband" value="$(arg motor_deadband)"/>
+      <arg name="motor_period" value="$(arg motor_period)"/>
+      <arg name="acc_period" value="$(arg acc_period)"/>
+      <arg name="buttons_period" value="$(arg buttons_period)"/>
+    </include>
+    <node name="thymio_driver" pkg="thymio_driver" type="$(arg driver)" output="screen">
+      <param name="axis_length" value="$(arg axis_length)"/>
+      <param name="odom_max_rate" value="$(arg odom_max_rate)"/>
+      <param name="launch_model" value="thymio_description model.launch"/>
+      <param name="tf_prefix" value="$(arg name)"/>
+      <param name="calibration_file" value="$(arg calibration_file)"/>
+      <param name="simulation" value="$(arg simulation)"/>
+    </node>
+  </group>
+  <include file="$(find thymio_description)/launch/model.launch" if="$(arg single)">
+    <arg name="name" value="$(arg name)"/>
+    <arg name="namespace" value="$(arg name)"/>
+  </include>
+
+
+</launch>

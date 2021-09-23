@@ -1,0 +1,10 @@
+<launch>
+
+  <arg name="name" default=""/>
+
+  <node pkg="thymio_description" type="generate_rviz_config.py" name="generate_rviz_config"
+    args="$(find thymio_description)/launch $(arg name)" output="screen"/>
+  <node pkg="rviz" type="rviz" name="rviz"
+    args="-d $(find thymio_description)/launch/thymio.rviz" output="screen"/>
+
+</launch>

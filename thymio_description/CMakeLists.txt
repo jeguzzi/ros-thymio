@@ -43,3 +43,6 @@ install(DIRECTORY meshes/
 install(DIRECTORY urdf/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/urdf
 )
+
+catkin_install_python(PROGRAMS script/generate_rviz_config.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

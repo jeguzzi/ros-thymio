@@ -33,11 +33,11 @@
     <param name="reload_script_on_reconnect" value="false"/>
     <rosparam param="nodes" subst_value="true">
       thymio:
-        type: thymio-II
+        name: thymio-II
         prefix: $(arg prefix)
         accept: true
-        maximal_number: $(arg maximal_number_of_nodes)
         include_id_in_events: $(arg include_id_in_events)
+        maximal_number: $(arg maximal_number_of_nodes)
       other:
         accept: false
     </rosparam>

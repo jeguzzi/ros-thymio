@@ -5,9 +5,10 @@
   <arg name="odom_max_rate" default="20.0"/>
   <arg name="mass" default="0.200"/>
   <arg name="name" default=""/>
+  <arg name="namespace" default=""/>
   <arg name="publish_gt_odom" default="false"/>
 
-  <group ns="$(eval arg('name') or '/')">
+  <group ns="$(eval arg('namespace') or '/')">
     <param name="robot_description" command="$(find xacro)/xacro $(find thymio_description)/urdf/thymio.urdf.xacro
       left_wheel_mu:=$(arg left_wheel_mu) right_wheel_mu:=$(arg right_wheel_mu)
       mass:=$(arg mass) name:=$(arg name) odom_max_rate:=$(arg odom_max_rate) publish_ground_truth:=$(arg publish_gt_odom)"/>
