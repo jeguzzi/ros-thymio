@@ -18,9 +18,13 @@ class Manager:
         self.model_process: Dict[int, subprocess.Popen[bytes]] = {}
 
     def on_aseba_node_list(self, msg: AsebaNodeList) -> None:
+        namespaces = [name for name, _ in self.ros_nodes.values()]
         for node in msg.nodes:
-            if node.name in self._drivers and node.id not in self.ros_nodes:
-                rospy.loginfo(f"Connected to new robot {node.id} of kind {node.name} and namespace {node.name_space}")
+            if(node.name in self._drivers and node.id not in self.ros_nodes and
+               node.name_space not in namespaces):
+                rospy.loginfo(
+                    f"Connected to new robot {node.id} of kind {node.name} "
+                    f"and namespace {node.name_space}")
                 self.add(uid=node.id, name=node.name_space, kind=node.name)
         uids = [node.id for node in msg.nodes]
         for uid in self.ros_nodes:
@@ -29,13 +33,14 @@ class Manager:
                 self.remove(uid)
 
     def add(self, uid: int, name: str, kind: str) -> None:
-        _, node = self.ros_nodes[uid] = (name, self._drivers[kind](namespace=name, standalone=False))
+        _, node = self.ros_nodes[uid] = (
+            name, self._drivers[kind](namespace=name, managed=True, uid=uid))
         if self.launch_model:
             # TODO(Jerome) ROS2 uses namespace, ROS1 name. I should make them = and
             # fix the differences in description
             self.model_process[uid] = subprocess.Popen(
                 (['roslaunch'] + self.launch_model.split(' ') +
-                 [f'name:={name}', f'name:={name}']))
+                 [f'name:={name}', f'namespace:={name}']))
 
     def remove(self, uid: int) -> None:
         _, node = self.ros_nodes.pop(uid)

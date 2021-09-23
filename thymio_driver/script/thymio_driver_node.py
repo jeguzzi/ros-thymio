@@ -7,7 +7,7 @@ from thymio_driver.thymio_driver_node import ThymioDriver
 
 def main() -> None:
     rospy.init_node('driver')
-    ThymioDriver(namespace='', standalone=True)
+    ThymioDriver()
     rospy.spin()
 
 

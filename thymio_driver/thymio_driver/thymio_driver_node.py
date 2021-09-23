@@ -7,19 +7,33 @@ from sensor_msgs.msg import Imu, Joy, Range, Temperature
 from std_msgs.msg import Bool, ColorRGBA, Empty, Float32, Header, Int8, Int16
 from thymio_msgs.msg import Comm, Led, LedGesture, Sound, SystemSound
 
-from .base import BaseDriver
+from .base import BaseDriver, Calibration, ProximityCalibration, MotorCalibration
 
 BASE_WIDTH = 91.5     # millimeters
 SPEED_COEF = 2.93     # 1mm/sec corresponds to X units of real thymio speed
 WHEEL_RADIUS = 0.022   # meters
 GROUND_MIN_RANGE = 9     # millimeters
 GROUND_MAX_RANGE = 30     # millimeters
+GROUND_SENSOR_FOV = 0.3  # radians
 
 BUTTONS = ['backward', 'forward', 'center', 'right', 'left']
 GROUND_NAMES = ['left', 'right']
 BODY_LEDS = ['bottom_left', 'bottom_right', 'top']
 LED_NUMBER = {Led.CIRCLE: 8, Led.PROXIMITY: 8, Led.GROUND: 2,
               Led.REMOTE: 1, Led.BUTTONS: 4, Led.TEMPERATURE: 2, Led.MICROPHONE: 1}
+
+DEFAULT_REAL_PROXIMITY_CALIBRATION = ProximityCalibration(
+    parameters=[4505.0, 0.0003, 0.0073], kind='power', range_max=0.14, range_min=0.0215, fov=0.3)
+
+DEFAULT_SIM_PROXIMITY_CALIBRATION = DEFAULT_REAL_PROXIMITY_CALIBRATION
+
+DEFAULT_REAL_MOTOR_CALIBRATION = MotorCalibration(
+    parameters=[0.001 / SPEED_COEF, 0.0], kind='quadratic', deadband=10
+)
+
+DEFAULT_SIM_MOTOR_CALIBRATION = MotorCalibration(
+    parameters=[0.000332, 0.0], kind='quadratic', deadband=0
+)
 
 
 class ThymioDriver(BaseDriver):
@@ -28,15 +42,28 @@ class ThymioDriver(BaseDriver):
     axis_length = BASE_WIDTH / 1000
     wheel_radius = WHEEL_RADIUS
     max_aseba_speed = 500
-    motor_calibration = {'parameters': [0.001 / SPEED_COEF, 0.0], 'kind': 'quadratic',
-                         'deadband': 10}
     proximity_names = ['left', 'center_left', 'center', 'center_right', 'right',
                        'rear_left', 'rear_right']
-    proximity_calibration = {'parameters': [4505.0, 0.0003, 0.0073], 'kind': 'power',
-                             'range_max': 0.14, 'range_min': 0.0215, 'fov': 0.3}
+    default_real_calibration = {
+        'proximity': {s: DEFAULT_REAL_PROXIMITY_CALIBRATION for s in proximity_names},
+        'motor': {s: DEFAULT_REAL_PROXIMITY_CALIBRATION for s in ('left', 'right')}}
+    default_sim_calibration = {
+        'proximity': {s: DEFAULT_REAL_PROXIMITY_CALIBRATION for s in proximity_names},
+        'motor': {s: DEFAULT_REAL_PROXIMITY_CALIBRATION for s in ('left', 'right')}}
     laser_angles = {'left': 0.64, 'center_left': 0.32, 'center': 0,
                     'center_right': -0.32, 'right': -0.64}
     laser_shift = 0.08
+
+    def default_calibration(self, simulated: bool = False) -> Calibration:
+        if simulated:
+            proximity = DEFAULT_SIM_PROXIMITY_CALIBRATION
+            motor = DEFAULT_SIM_MOTOR_CALIBRATION
+        else:
+            proximity = DEFAULT_REAL_PROXIMITY_CALIBRATION
+            motor = DEFAULT_REAL_MOTOR_CALIBRATION
+        return {
+            'proximity': {s: proximity for s in self.proximity_names},
+            'motor': {s: motor for s in ('left', 'right')}}
 
     def init(self) -> None:
 
@@ -53,8 +80,8 @@ class ThymioDriver(BaseDriver):
             'publisher': rospy.Publisher(self._ros(f'ground/{name}'), Range, queue_size=1),
             'msg': Range(
                 header=Header(
-                    frame_id=self._ros('ground_{name}_link'.format(name=name))),
-                radiation_type=Range.INFRARED, field_of_view=self.proximity_calibration['fov'],
+                    frame_id=self._frame('ground_{name}_link'.format(name=name))),
+                radiation_type=Range.INFRARED, field_of_view=GROUND_SENSOR_FOV,
                 min_range=(GROUND_MIN_RANGE / 1000.0), max_range=(GROUND_MAX_RANGE / 1000.0))
         } for name in GROUND_NAMES]
 

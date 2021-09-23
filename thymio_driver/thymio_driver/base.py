@@ -1,6 +1,7 @@
 import time
+import yaml
 from math import copysign, cos, sin, sqrt
-from typing import Dict, List, Optional, Tuple, TypeVar
+from typing import Dict, List, Optional, Tuple, TypeVar, cast
 try:
     from typing import TypedDict
 except ImportError:
@@ -31,6 +32,10 @@ MotorCalibration = TypedDict('MotorCalibration',
 ProximityCalibration = TypedDict('ProximityCalibration',
                                  {'parameters': List[float], 'kind': str,
                                   'range_max': float, 'range_min': float, 'fov': float})
+
+Calibration = TypedDict(
+    "Calibration",
+    {'motor': Dict[str, MotorCalibration], 'proximity': Dict[str, ProximityCalibration]})
 
 
 class MotorSpeedConversion:
@@ -81,14 +86,9 @@ class ProximityConversion:
 
     def aseba_to_si(self, value: int) -> float:
         if value == 0:
-            # HACK(Jerome) Galactic does not like +/- inf
-            # return float('inf')
-            # return self.range_max
-            return -1.0
+            return float('inf')
         if value >= self.max_value:
-            # HACK(Jerome) Galactic does not like +/- inf
-            return self.range_min
-            # return -float('inf')
+            return -float('inf')
         dist = self.x0 + sqrt((self.x0 ** 2 - self.c) * (1 - self.max_value / value))
         return max(self.range_min, min(dist, self.range_max))
 
@@ -117,22 +117,24 @@ class BaseDriver:
     proximity_calibration: ProximityCalibration
     laser_angles: Dict[str, float]
     laser_shift: float
+    uid: int
+    calibration: Calibration
 
-    def __init__(self, namespace: str = '', standalone: bool = True) -> None:
-        # TODO(ROS1): check if we don't need the namespace enaymbe
-        # super(BaseDriver, self).__init__('driver', namespace=namespace)
-        rospy.loginfo(f"Create {type(self)} with namespace {namespace}, standalone {standalone}")
+    def __init__(self, namespace: str = '', managed: bool = False, uid: int = -1
+                 ) -> None:
+        self.aseba_node = None
+        self.uid = uid
         self.namespace = namespace
         self.node_id: Optional[int] = None
-        if standalone:
-            # TODO(Jerome): better semantic
-            if not self.wait_for_aseba_node():
+        if not managed:
+            self.uid, running = self.wait_for_aseba_node()
+            if not running:
                 self.load_script()
-        # self.clock = self.get_clock()
         if namespace:
             self.tf_prefix = namespace
         else:
             self.tf_prefix = rospy.get_param('~tf_prefix', '')
+        self.init_calibration()
         self.init_odometry()
         self.init_wheels()
         self.init_proximity()
@@ -142,7 +144,28 @@ class BaseDriver:
         # REVIEW: not implemented yet in ROS2
         # self.on_shutdown(self.shutdown)
         rospy.Service(self._ros('is_ready'), std_srvs.srv.Empty, self.ready)
-        rospy.loginfo(f"{self.kind} is ready")
+        rospy.loginfo(f"{self.kind} is ready at namespace {namespace}")
+
+    def init_calibration(self) -> None:
+        calibration_file = rospy.get_param('~calibration_file', '')
+        simulated = rospy.get_param('~simulation', False)
+        self.calibration = self.default_calibration(simulated)
+        if calibration_file:
+            rospy.loginfo(f"calibration_file {calibration_file}")
+            try:
+                with open(calibration_file, 'r') as f:
+                    calibration = yaml.safe_load(f).get(self.uid, {})
+                    rospy.loginfo(f"calibration from file {calibration}")
+                    self.calibration.update(calibration)
+            except FileNotFoundError:
+                pass
+        for group, v in self.calibration.items():
+            for name, cal in cast(Dict[str, Dict], v).items():
+                for param, value in cal.items():
+                    rospy.set_param(f'~{self.namespace}/{group}/{name}/{param}', value)
+
+    def default_calibration(self, simulated: bool = False) -> Calibration:
+        return {'motor': {}, 'proximity': {}}
 
     # TODO(ROS1): Dynamic reconfig callback
     # def param_callback(self, parameters: List[rclpy.parameter.Parameter]
@@ -189,7 +212,7 @@ class BaseDriver:
         if self.node_id is not None:
             load_script(file_name=script_path, node_ids=[self.node_id])
 
-    def wait_for_aseba_node(self) -> bool:
+    def wait_for_aseba_node(self) -> Tuple[int, bool]:
         while True:
             try:
                 rospy.wait_for_service('aseba/get_nodes', timeout=1.0)
@@ -203,7 +226,7 @@ class BaseDriver:
             if nodes:
                 rospy.loginfo(f'Found Thymio {nodes[0]}')
                 self.node_id = nodes[0].id
-                return nodes[0].running
+                return (nodes[0].id, nodes[0].running)
             rospy.loginfo(f'Waiting for a node of kind {self.kind} ...')
             time.sleep(1)
 
@@ -242,19 +265,13 @@ class BaseDriver:
         self.tf_broadcaster = TransformBroadcaster()
         self.odom_pub = rospy.Publisher(self._ros('odom'), Odometry, queue_size=1)
 
-    def load_calibration(self, group: str, name: str, default: T) -> T:
-        return {key: rospy.get_param(f'~{group}/{name}/{key}', value)
-                for key, value in default.items()}  # type: ignore
-
     def init_wheels(self) -> None:
         self.left_wheel_angle = 0.0
         self.right_wheel_angle = 0.0
         self.left_steps = 0
         self.right_steps = 0
         self.axis_length = rospy.get_param('~axis_length', self.axis_length)
-        motor_calibration = {
-            motor: self.load_calibration('motor_calibration', motor, self.motor_calibration)
-            for motor in ('left', 'right')}
+        motor_calibration = self.calibration['motor']
         self.motor_speed_conversion = {motor: MotorSpeedConversion(motor_calibration[motor])
                                        for motor in ('left', 'right')}
         self.left_wheel_motor_speed = self.motor_speed_conversion['left'].si_to_aseba
@@ -275,12 +292,10 @@ class BaseDriver:
     def init_proximity(self) -> None:
 
         self.proximity_sensors: List[ProximitySensor] = []
-
+        proximity_calibration = self.calibration['proximity']
         for name in self.proximity_names:
             pub = rospy.Publisher(self._ros(f'proximity/{name}'), Range, queue_size=1)
-            converter = ProximityConversion(
-                self.load_calibration('proximity_calibration', name,
-                                      default=self.proximity_calibration))
+            converter = ProximityConversion(proximity_calibration[name])
             msg = Range(
                 header=Header(frame_id=self._frame(f'proximity_{name}_link')),
                 radiation_type=Range.INFRARED,
