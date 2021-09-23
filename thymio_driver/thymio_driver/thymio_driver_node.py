@@ -44,12 +44,6 @@ class ThymioDriver(BaseDriver):
     max_aseba_speed = 500
     proximity_names = ['left', 'center_left', 'center', 'center_right', 'right',
                        'rear_left', 'rear_right']
-    default_real_calibration = {
-        'proximity': {s: DEFAULT_REAL_PROXIMITY_CALIBRATION for s in proximity_names},
-        'motor': {s: DEFAULT_REAL_PROXIMITY_CALIBRATION for s in ('left', 'right')}}
-    default_sim_calibration = {
-        'proximity': {s: DEFAULT_REAL_PROXIMITY_CALIBRATION for s in proximity_names},
-        'motor': {s: DEFAULT_REAL_PROXIMITY_CALIBRATION for s in ('left', 'right')}}
     laser_angles = {'left': 0.64, 'center_left': 0.32, 'center': 0,
                     'center_right': -0.32, 'right': -0.64}
     laser_shift = 0.08

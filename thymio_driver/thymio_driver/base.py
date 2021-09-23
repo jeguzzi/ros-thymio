@@ -125,7 +125,6 @@ class BaseDriver:
         self.aseba_node = None
         self.uid = uid
         self.namespace = namespace
-        self.node_id: Optional[int] = None
         if not managed:
             self.uid, running = self.wait_for_aseba_node()
             if not running:
@@ -209,8 +208,7 @@ class BaseDriver:
             except rospy.ROSException:
                 rospy.loginfo('load_script service not available, waiting again...')
         load_script = rospy.ServiceProxy('aseba/load_script', LoadScript)
-        if self.node_id is not None:
-            load_script(file_name=script_path, node_ids=[self.node_id])
+        load_script(file_name=script_path)
 
     def wait_for_aseba_node(self) -> Tuple[int, bool]:
         while True:
@@ -225,7 +223,6 @@ class BaseDriver:
             nodes = [node for node in resp.nodes if node.name == self.kind]
             if nodes:
                 rospy.loginfo(f'Found Thymio {nodes[0]}')
-                self.node_id = nodes[0].id
                 return (nodes[0].id, nodes[0].running)
             rospy.loginfo(f'Waiting for a node of kind {self.kind} ...')
             time.sleep(1)
