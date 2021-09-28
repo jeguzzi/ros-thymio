@@ -224,7 +224,7 @@ Visualization Manager:
       Enabled: true
       Name: Range
       Queue Size: 100
-      Topic: /thymio/proximity/rear_right
+      Topic: /thymio/proximity/rear_left
       Unreliable: false
       Value: true
     - Alpha: 0.5
