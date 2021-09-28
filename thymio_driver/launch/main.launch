@@ -28,6 +28,7 @@
 
   <include file="$(find-pkg-share thymio_driver)/launch/asebaros.launch">
     <arg name="single" value="$(var single)"/>
+    <arg name="set_id_variable" value="$(var simulation)"/>
     <arg name="reduced_api" value="$(var reduced_api)"/>
     <arg name="device" value="$(var device)"/>
     <arg name="port" value="$(var port)"/>

@@ -12,7 +12,7 @@ from launch_ros.actions import PushRosNamespace
 
 def urdf(name: str = '', proximity_max_range: float = 0.12, proximity_resolution: float = 0.005,
          proximity_fov: float = 0.3, publish_ground_truth: bool = False,
-         ground_truth_frame_id: str = '/world', ground_truth_frame_rate: float = 30.0,
+         ground_truth_frame_id: str = '/world', ground_truth_update_rate: float = 30.0,
          odom_rate: float = 20.0) -> str:
     urdf_xacro = os.path.join(get_package_share_directory('thymio_description'),
                               'urdf', 'thymio.urdf.xacro')

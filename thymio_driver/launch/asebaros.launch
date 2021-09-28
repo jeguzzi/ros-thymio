@@ -14,6 +14,7 @@
   <arg name="buttons_period" default="5"/>
   <arg name="single" default="true"/>
   <arg name="reduced_api" default="false"/>
+  <arg name="set_id_variable" default="false"/>
   <let name="api_suffix" value="_sim" if="$(var reduced_api)"/>
   <let name="api_suffix" value="" unless="$(var reduced_api)"/>
   <let name="script" value="thymio_ros$(var api_suffix).aesl" if="$(var single)"/>
@@ -26,7 +27,7 @@
   <let name="prefix" value="thymio_" unless="$(var single)"/>
 
   <node pkg="asebaros" exec="asebaros" name="asebaros" args="$-ros-args --log-level info" output="screen">
-    <param name="set_id_variable" value="false"/>
+    <param name="set_id_variable" value="$(var set_id_variable)"/>
     <param name="reset_on_closing" value="true"/>
     <param name="targets" value="$(var device)" value-sep=","/>
     <param name="port" value="$(var port)"/>
@@ -38,6 +39,7 @@
         <param name="prefix" value="$(var prefix)"/>
         <param name="namespace" value=""/>
         <param name="accept" value="true"/>
+        <param name="id_variable" value="_id"/>
         <param name="maximal_number" value="$(var maximal_number_of_nodes)"/>
         <param name="include_id_in_events" value="$(var include_id_in_events)"/>
       </param>
