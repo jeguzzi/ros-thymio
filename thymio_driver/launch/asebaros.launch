@@ -14,6 +14,7 @@
   <arg name="buttons_period" default="5"/>
   <arg name="single" default="true"/>
   <arg name="reduced_api" default="false"/>
+  <arg name="set_id_variable" default="false"/>
   <arg name="api_suffix" value="_sim" if="$(arg reduced_api)"/>
   <arg name="api_suffix" value="" unless="$(arg reduced_api)"/>
   <arg name="script" value="thymio_ros$(arg api_suffix).aesl" if="$(arg single)"/>
@@ -26,7 +27,7 @@
   <arg name="prefix" value="thymio_" unless="$(arg single)"/>
 
   <node pkg="asebaros" type="asebaros" name="asebaros" output="screen">
-    <param name="set_id_variable" value="false"/>
+    <param name="set_id_variable" value="$(arg set_id_variable)"/>
     <param name="reset_on_closing" value="true"/>
     <rosparam param="targets" subst_value="true">
       [$(arg device),]
