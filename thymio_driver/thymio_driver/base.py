@@ -259,7 +259,7 @@ class BaseDriver:
         self.proximity_sensors = []
         proximity_calibration = self.calibration['proximity']
         for name in self.proximity_names:
-            pub = rospy.Publisher(self._ros(f'proximity/{name}'), Range, queue_size=1)
+            pub = rospy.Publisher(self._ros('proximity/{0}'.format(name)), Range, queue_size=1)
             converter = ProximityConversion(proximity_calibration[name])
             msg = Range(
                 header=Header(frame_id=self._frame('proximity_{0}_link'.format(name))),

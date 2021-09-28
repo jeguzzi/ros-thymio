@@ -35,7 +35,7 @@ class Manager(object):
             # fix the differences in description
             self.model_process[uid] = subprocess.Popen(
                 (['roslaunch'] + self.launch_model.split(' ') +
-                 ['name:={0}'.format(name), f'namespace:={0}'.format(name)]))
+                 ['name:={0}'.format(name), 'namespace:={0}'.format(name)]))
 
     def remove(self, uid):
         _, node = self.ros_nodes.pop(uid)
