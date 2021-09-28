@@ -7,7 +7,7 @@ from sensor_msgs.msg import Imu, Joy, Range, Temperature
 from std_msgs.msg import Bool, ColorRGBA, Empty, Float32, Header, Int8, Int16
 from thymio_msgs.msg import Comm, Led, LedGesture, Sound, SystemSound
 
-from .base import BaseDriver, ProximityCalibration, MotorCalibration
+from .base import BaseDriver
 
 BASE_WIDTH = 91.5     # millimeters
 SPEED_COEF = 2.93     # 1mm/sec corresponds to X units of real thymio speed
@@ -22,16 +22,17 @@ BODY_LEDS = ['bottom_left', 'bottom_right', 'top']
 LED_NUMBER = {Led.CIRCLE: 8, Led.PROXIMITY: 8, Led.GROUND: 2,
               Led.REMOTE: 1, Led.BUTTONS: 4, Led.TEMPERATURE: 2, Led.MICROPHONE: 1}
 
-DEFAULT_REAL_PROXIMITY_CALIBRATION = ProximityCalibration(
+DEFAULT_REAL_PROXIMITY_CALIBRATION = dict(
     parameters=[4505.0, 0.0003, 0.0073], kind='power', range_max=0.14, range_min=0.0215, fov=0.3)
+)
 
 DEFAULT_SIM_PROXIMITY_CALIBRATION = DEFAULT_REAL_PROXIMITY_CALIBRATION
 
-DEFAULT_REAL_MOTOR_CALIBRATION = MotorCalibration(
+DEFAULT_REAL_MOTOR_CALIBRATION = dict(
     parameters=[0.001 / SPEED_COEF, 0.0], kind='quadratic', deadband=10
 )
 
-DEFAULT_SIM_MOTOR_CALIBRATION = MotorCalibration(
+DEFAULT_SIM_MOTOR_CALIBRATION = dict(
     parameters=[0.000332, 0.0], kind='quadratic', deadband=0
 )
 
