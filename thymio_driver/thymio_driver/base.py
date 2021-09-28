@@ -127,9 +127,10 @@ class BaseDriver:
             except FileNotFoundError:
                 pass
         for group, v in self.calibration.items():
-            for name, cal in cast(Dict[str, Dict], v).items():
+            for name, cal in v.items():
                 for param, value in cal.items():
-                    rospy.set_param(f'~{self.namespace}/{group}/{name}/{param}', value)
+                    rospy.set_param(
+                        '~{0}/{1}/{2}/{3}'.format(self.namespace, group, name, param), value)
 
     def default_calibration(self, simulated=False):
         return {'motor': {}, 'proximity': {}}
