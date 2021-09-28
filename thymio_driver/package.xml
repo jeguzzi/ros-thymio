@@ -11,9 +11,9 @@
     robot through asebaros.
   </description>
 
-  <maintainer email="stephane@magnenat.net">Stéphane Magnenat</maintainer>
+  <maintainer email="jerome@idsia.ch">Jérôme Guzzi</maintainer>
   <license>BSD</license>
-  <url type="website">http://ros.org/wiki/thymio_navigation_driver</url>
+  <url type="website">http://jeguzzi.github.io/ros-aseba</url>
 
   <buildtool_depend>ament_package</buildtool_depend>
 
