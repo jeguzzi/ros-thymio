@@ -23,7 +23,7 @@ LED_NUMBER = {Led.CIRCLE: 8, Led.PROXIMITY: 8, Led.GROUND: 2,
               Led.REMOTE: 1, Led.BUTTONS: 4, Led.TEMPERATURE: 2, Led.MICROPHONE: 1}
 
 DEFAULT_REAL_PROXIMITY_CALIBRATION = dict(
-    parameters=[4505.0, 0.0003, 0.0073], kind='power', range_max=0.14, range_min=0.0215, fov=0.3)
+    parameters=[4505.0, 0.0003, 0.0073], kind='power', range_max=0.14, range_min=0.0215, fov=0.3
 )
 
 DEFAULT_SIM_PROXIMITY_CALIBRATION = DEFAULT_REAL_PROXIMITY_CALIBRATION
