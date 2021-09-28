@@ -27,6 +27,7 @@
   <group ns="$(eval arg('name') or '/')">
     <include file="$(find thymio_driver)/launch/asebaros.launch">
       <arg name="single" value="$(arg single)"/>
+      <arg name="set_id_variable" value="$(arg simulation)"/>
       <arg name="reduced_api" value="$(arg reduced_api)"/>
       <arg name="device" value="$(arg device)"/>
       <arg name="port" value="$(arg port)"/>
