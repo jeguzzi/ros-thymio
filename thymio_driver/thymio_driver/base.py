@@ -124,7 +124,7 @@ class BaseDriver:
                     calibration = yaml.safe_load(f).get(self.uid, {})
                     rospy.loginfo("calibration from file %s", calibration)
                     self.calibration.update(calibration)
-            except FileNotFoundError:
+            except IOError:
                 pass
         for group, v in self.calibration.items():
             for name, cal in v.items():
