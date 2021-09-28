@@ -15,11 +15,11 @@ def rviz(context: LaunchContext) -> List[Node]:
         get_package_share_directory('thymio_description'), 'launch', 'template.rviz')
     with open(source_path, 'r') as f:
         source = f.read()
-    if name and name[0] != "/":
-        ns = f"/{name}"
+    if not name:
+        dest = source.replace('/thymio', '')
     else:
-        ns = name
-    dest = source.replace('/thymio', ns).replace('thymio', name)
+        dest = source
+    dest = dest.replace('thymio', name)
     dest_path = os.path.join(
         get_package_share_directory('thymio_description'), 'launch', 'thymio.rviz')
     with open(dest_path, 'w') as f:
