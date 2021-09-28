@@ -30,7 +30,7 @@
     <param name="set_id_variable" value="$(arg set_id_variable)"/>
     <param name="reset_on_closing" value="true"/>
     <rosparam param="targets" subst_value="true">
-      [$(arg device),]
+      ["$(arg device)",]
     </rosparam>
     <param name="port" value="$(arg port)"/>
     <param name="shutdown_on_unconnect" value="false"/>
@@ -42,6 +42,7 @@
         accept: true
         include_id_in_events: $(arg include_id_in_events)
         maximal_number: $(arg maximal_number_of_nodes)
+        id_variable: _id
       other:
         accept: false
     </rosparam>
