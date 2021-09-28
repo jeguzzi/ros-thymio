@@ -42,6 +42,7 @@
         accept: true
         include_id_in_events: $(arg include_id_in_events)
         maximal_number: $(arg maximal_number_of_nodes)
+        id_variable: _id
       other:
         accept: false
     </rosparam>
