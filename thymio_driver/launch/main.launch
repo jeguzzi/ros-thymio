@@ -9,7 +9,7 @@
   <let name="reduced_api" value="$(eval '$(var simulation) and $(var simulation_has_reduced_api)')"/>
   <let name="driver" value="thymio_driver" if="$(var single)"/>
   <let name="driver" value="multi_thymio_driver" unless="$(var single)"/>
-  <let name="ROS_HOME" value="$(env ROS_HOME $(env HOME $(env HOMEPATH))/.ros)"/>
+  <let name="ROS_HOME" value="$(env ROS_HOME $(env HOME $(env HOMEPATH ''))/.ros)"/>
   <arg name="calibration_file" default="$(var ROS_HOME)/thymio_calibration.yaml"/>
   <arg name="device" default=""/>
   <arg name="port" default="44444"/>
