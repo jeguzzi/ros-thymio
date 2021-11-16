@@ -15,6 +15,7 @@
   <arg name="single" default="true"/>
   <arg name="reduced_api" default="false"/>
   <arg name="set_id_variable" default="false"/>
+  <arg name="highest_acceptable_protocol_version" default="100"/>
   <let name="api_suffix" value="_sim" if="$(var reduced_api)"/>
   <let name="api_suffix" value="" unless="$(var reduced_api)"/>
   <let name="script" value="thymio_ros$(var api_suffix).aesl" if="$(var single)"/>
@@ -26,13 +27,14 @@
   <let name="prefix" value="" if="$(var single)"/>
   <let name="prefix" value="thymio_" unless="$(var single)"/>
 
-  <node pkg="asebaros" exec="asebaros" name="asebaros" args="$-ros-args --log-level info" output="screen">
+  <node pkg="asebaros" exec="asebaros" name="asebaros" args="--ros-args --log-level info" output="screen">
     <param name="set_id_variable" value="$(var set_id_variable)"/>
     <param name="reset_on_closing" value="true"/>
     <param name="targets" value="$(var device)" value-sep=","/>
     <param name="port" value="$(var port)"/>
     <param name="shutdown_on_unconnect" value="false"/>
     <param name="reload_script_on_reconnect" value="false"/>
+    <param name="highest_acceptable_protocol_version" value="$(var highest_acceptable_protocol_version)"/>
     <param name="nodes">
       <param name="thymio">
         <param name="name" value="thymio-II"/>

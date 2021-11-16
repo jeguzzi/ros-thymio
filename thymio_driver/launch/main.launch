@@ -23,6 +23,7 @@
   <arg name="motor_period" default="5"/>
   <arg name="acc_period" default="2"/>
   <arg name="buttons_period" default="5"/>
+  <arg name="highest_acceptable_protocol_version" default="100"/>
 
   <push-ros-namespace namespace="$(var name)" if="$(var single)"/>
 
@@ -42,6 +43,7 @@
     <arg name="motor_period" value="$(var motor_period)"/>
     <arg name="acc_period" value="$(var acc_period)"/>
     <arg name="buttons_period" value="$(var buttons_period)"/>
+    <arg name="highest_acceptable_protocol_version" value="$(var highest_acceptable_protocol_version)"/>
   </include>
 
   <node pkg="thymio_driver" exec="$(var driver)" output="screen" args="--ros-args --log-level info">
