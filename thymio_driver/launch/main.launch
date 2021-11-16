@@ -10,7 +10,6 @@
   <arg name="driver" value="thymio_driver_node.py" if="$(arg single)"/>
   <arg name="driver" value="multi_thymio_driver_node.py" unless="$(arg single)"/>
   <arg name="ROS_HOME" value="$(eval optenv('HOME') or optenv('HOMEPATH'))"/>
-  <!-- <arg name="ROS_HOME" value="$(eval \"optenv('HOME')\" or \"optenv('HOMEPATH')\")/.ros"/> -->
   <arg name="calibration_file" default="$(arg ROS_HOME)/thymio_calibration.yaml"/>
   <arg name="device" default=""/>
   <arg name="port" default="44444"/>
