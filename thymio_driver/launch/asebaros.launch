@@ -15,6 +15,7 @@
   <arg name="single" default="true"/>
   <arg name="reduced_api" default="false"/>
   <arg name="set_id_variable" default="false"/>
+  <arg name="highest_acceptable_protocol_version" default="100"/>
   <arg name="api_suffix" value="_sim" if="$(arg reduced_api)"/>
   <arg name="api_suffix" value="" unless="$(arg reduced_api)"/>
   <arg name="script" value="thymio_ros$(arg api_suffix).aesl" if="$(arg single)"/>
@@ -35,6 +36,7 @@
     <param name="port" value="$(arg port)"/>
     <param name="shutdown_on_unconnect" value="false"/>
     <param name="reload_script_on_reconnect" value="false"/>
+    <param name="highest_acceptable_protocol_version" value="$(arg highest_acceptable_protocol_version)"/>
     <rosparam param="nodes" subst_value="true">
       thymio:
         name: thymio-II

@@ -23,6 +23,7 @@
   <arg name="motor_period" default="5"/>
   <arg name="acc_period" default="2"/>
   <arg name="buttons_period" default="5"/>
+  <arg name="highest_acceptable_protocol_version" default="100"/>
 
   <group ns="$(eval arg('name') or '/')">
     <include file="$(find thymio_driver)/launch/asebaros.launch">
@@ -41,6 +42,7 @@
       <arg name="motor_period" value="$(arg motor_period)"/>
       <arg name="acc_period" value="$(arg acc_period)"/>
       <arg name="buttons_period" value="$(arg buttons_period)"/>
+      <arg name="highest_acceptable_protocol_version" value="$(arg highest_acceptable_protocol_version)"/>
     </include>
     <node name="thymio_driver" pkg="thymio_driver" type="$(arg driver)" output="screen">
       <param name="axis_length" value="$(arg axis_length)"/>
