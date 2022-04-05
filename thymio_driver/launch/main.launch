@@ -2,7 +2,7 @@
 
   <arg name="axis_length" default="0.0935"/>
   <arg name="odom_max_rate" default="-1"/>
-  <arg name="single" default="true"/>
+  <arg name="single" default="True"/>
   <arg name="name" default=""/>
   <arg name="simulation" default="False"/>
   <arg name="simulation_has_reduced_api" default="True"/>
@@ -23,7 +23,9 @@
   <arg name="motor_period" default="5"/>
   <arg name="acc_period" default="2"/>
   <arg name="buttons_period" default="5"/>
+  <arg name="model" default="True"/>
   <arg name="highest_acceptable_protocol_version" default="100"/>
+  <let name="launch_model" value="$(eval '$(var model) and $(var single)')"/>
 
   <push-ros-namespace namespace="$(var name)" if="$(var single)"/>
 
@@ -55,7 +57,7 @@
     <param name="simulation" value="$(var simulation)"/>
   </node>
 
-  <include file="$(find-pkg-share thymio_description)/launch/model.launch.py" if="$(var single)">
+  <include file="$(find-pkg-share thymio_description)/launch/model.launch.py" if="$(var launch_model)">
     <arg name="name" value="$(var name)"/>
     <arg name="namespace" value=""/>
   </include>
