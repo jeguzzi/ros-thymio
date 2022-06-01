@@ -34,6 +34,9 @@ class Manager(rclpy.node.Node):  # type: ignore
                 self.remove(uid)
 
     def add(self, uid: int, name: str, kind: str) -> None:
+        if not self.executor:
+            self.get_logger().error("No exector defined: won't add node")
+            return
         _, node = self.ros_nodes[uid] = (
             name, self._drivers[kind](namespace=name, manager=self, uid=uid))
         self.executor.add_node(node)

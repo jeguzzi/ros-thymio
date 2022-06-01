@@ -15,7 +15,7 @@ import yaml
 from scipy.optimize import curve_fit
 
 import rclpy.node
-from asebaros_msgs.msg import AsebaEvent
+from asebaros_msgs.msg import Event as AsebaEvent
 from rclpy.time import Time
 from std_msgs.msg import Bool
 from thymio_msgs.msg import Led, SystemSound

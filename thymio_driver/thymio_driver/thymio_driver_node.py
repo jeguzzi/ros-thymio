@@ -2,8 +2,14 @@ import array
 import time
 from typing import Any, Callable, List, Optional
 
+try:
+    from typing import TypedDict
+except ImportError:
+    from typing_extensions import TypedDict
+
 import rclpy
 import rclpy.duration
+import rclpy.publisher
 import rclpy.timer
 from asebaros_msgs.msg import Event as AsebaEvent
 from sensor_msgs.msg import Imu, Joy, Range, Temperature
@@ -11,6 +17,8 @@ from std_msgs.msg import Bool, ColorRGBA, Empty, Float32, Header, Int8, Int16
 from thymio_msgs.msg import Comm, Led, LedGesture, Sound, SystemSound
 
 from .base import BaseDriver, Calibration, ProximityCalibration, MotorCalibration
+
+GroundSensor = TypedDict('GroundSensor', {'publisher': rclpy.publisher.Publisher, 'msg': Range})
 
 BASE_WIDTH = 91.5     # millimeters
 SPEED_COEF = 2.93     # 1mm/sec corresponds to X units of real thymio speed
@@ -75,7 +83,7 @@ class ThymioDriver(BaseDriver):
                 AsebaEvent, self._aseba(f'button_{button}'),
                 self.on_aseba_button_event(self._ros(f'buttons/{button}')), 1)
 
-        self.ground_sensors = [{
+        self.ground_sensors: List[GroundSensor] = [{
             'publisher': self.create_publisher(Range, self._ros(f'ground/{name}'), 1),
             'msg': Range(
                 header=Header(
@@ -176,12 +184,12 @@ class ThymioDriver(BaseDriver):
         self.comm_rx_publisher.publish(rmsg)
 
     def on_comm_enable(self, msg: Bool) -> None:
-        msg = AsebaEvent(stamp=self.clock.now().to_msg(), source=0, data=[msg.data])
-        self.aseba_enable_comm_publisher.publish(msg)
+        out_msg = AsebaEvent(stamp=self.clock.now().to_msg(), source=0, data=[msg.data])
+        self.aseba_enable_comm_publisher.publish(out_msg)
 
     def on_comm_tx_payload(self, msg: Int16) -> None:
-        msg = AsebaEvent(stamp=self.clock.now().to_msg(), source=0, data=[msg.data])
-        self.aseba_set_comm_tx_payload_publisher.publish(msg)
+        out_msg = AsebaEvent(stamp=self.clock.now().to_msg(), source=0, data=[msg.data])
+        self.aseba_set_comm_tx_payload_publisher.publish(out_msg)
 
     def on_shutdown_msg(self, msg: Empty) -> None:
         self.aseba_shutdown_publisher.publish(
@@ -272,7 +280,10 @@ class ThymioDriver(BaseDriver):
         self.remote_publisher.publish(Int8(data=msg.data[1]))
 
     def on_sound_threshold(self, msg: AsebaEvent) -> None:
-        value = msg * 255
+        if not msg.data:
+            self.get_logger().warn("on_sound_threshold: Aseba event message has not enough data")
+            return
+        value = msg.data[0] * 255
         if value < 0:
             value = 1
         if value > 255:

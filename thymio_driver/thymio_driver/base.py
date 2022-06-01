@@ -383,7 +383,7 @@ class BaseDriver(rclpy.node.Node):  # type: ignore
             return
         dt = (now - self.last_odom_stamp).nanoseconds / 1e9
         if dt <= 0:
-            self.get_logger('error')(f"Negative time difference {dt} s between odometry messages")
+            self.get_logger().error(f"Negative time difference {dt} s between odometry messages")
             return
         self.last_odom_stamp = now
         stamp = data.stamp
