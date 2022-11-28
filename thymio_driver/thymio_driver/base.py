@@ -245,7 +245,7 @@ class BaseDriver(rclpy.node.Node):  # type: ignore
             nodes = [node for node in resp.result().nodes
                      if node.name == self.kind]
             if nodes:
-                self.get_logger().info(f'Found Thymio {nodes[0]}')
+                self.get_logger().info(f'Found node {nodes[0]}')
                 return (nodes[0].id, nodes[0].running)
             self.get_logger().info(
                 f"Waiting for an Aseba node with name {self.kind}")
