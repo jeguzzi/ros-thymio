@@ -69,7 +69,7 @@ class Calibration(rclpy.node.Node):  # type: ignore
         self.axis_length: float = self.declare_parameter('axis_length', 0.0935).value
         self.target_number_of_samples = self.declare_parameter('number_of_samples', 1).value
         self.motor_speeds = self.declare_parameter('motor_speeds', DEFAULT_MOTOR_SPEEDS).value
-        self.get_logger().warn(f'{self.motor_speeds}, {type(self.motor_speeds)}')
+        self.get_logger().warning(f'{self.motor_speeds}, {type(self.motor_speeds)}')
         self.save_to = self.declare_parameter('save_to', '').value
         os.makedirs(self.save_to, exist_ok=True)
         self.should_save_samples = self.declare_parameter('save_samples', False).value

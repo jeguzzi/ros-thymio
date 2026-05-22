@@ -25,12 +25,12 @@ class Manager(rclpy.node.Node):  # type: ignore
         for node in msg.nodes:
             if(node.name in self._drivers and node.id not in self.ros_nodes and
                node.name_space not in namespaces):
-                self.get_logger().warn(f"Connected to new robot {node.id} of kind {node.name}")
+                self.get_logger().warning(f"Connected to new robot {node.id} of kind {node.name}")
                 self.add(uid=node.id, name=node.name_space, kind=node.name)
         uids = [node.id for node in msg.nodes]
         for uid in self.ros_nodes:
             if uid not in uids:
-                self.get_logger().warn(f"Lost connection with robot {id}")
+                self.get_logger().warning(f"Lost connection with robot {id}")
                 self.remove(uid)
 
     def add(self, uid: int, name: str, kind: str) -> None:

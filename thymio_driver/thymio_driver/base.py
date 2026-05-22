@@ -221,7 +221,7 @@ class BaseDriver(rclpy.node.Node):  # type: ignore
         default_script = ''
         script_path = self.get_or_declare_parameter('script', default_script).value
         if not script_path:
-            self.get_logger().warn('Script not provided!')
+            self.get_logger().warning('Script not provided!')
             return
 
         self.get_logger().info(f'Try to load script at {script_path}')

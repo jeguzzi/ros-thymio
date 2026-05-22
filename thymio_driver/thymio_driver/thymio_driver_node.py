@@ -281,7 +281,7 @@ class ThymioDriver(BaseDriver):
 
     def on_sound_threshold(self, msg: AsebaEvent) -> None:
         if not msg.data:
-            self.get_logger().warn("on_sound_threshold: Aseba event message has not enough data")
+            self.get_logger().warning("on_sound_threshold: Aseba event message has not enough data")
             return
         value = msg.data[0] * 255
         if value < 0:
